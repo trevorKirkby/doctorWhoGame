@@ -1,0 +1,975 @@
+#!/usr/bin/env python
+
+import pygame, time, math, random, sys
+
+text1 = "Here are the rules: Press s to use your sonic, which triggers gates and explodable objects. Press h to heal, but know that it puts a serious drain on regenorations, and is only worthwhile to try if you were badly injured by being shot, not blown up. Obviously try not to get shot or blown up. There are several daleks, and a special weapons dalek that can wreak serious destruction. There is also two very fast daleks who shoot very quickly, and are really dangerous. However these shots are designed to specifically harm time lords, and don't even always damage walls, even though people will run away from them. The shots will affect you immediately, ending the game with no chance to regenorate or heal. Basically the shots act a lot like a lot of gamma radiation. Dont let amelia pond die either. There are civilians that get saved by the tardis, but they wont make you lose if they die. If you are badly injured, you will only have so much time to get to the tardis. Make sure you look at the terminal messages while playing, too. If you are injured and dont have eneough regenorations when you get to the tardis, you'll still die, so be careful. Okay, that's about it. Starting up . . ."
+
+text = text1.split()
+
+fish = raw_input("would you like instructions? y/N: ")
+
+if fish == "y":
+	for word in text:
+		randthing = random.choice(range(3)) + 1
+		randVariable = randthing/2
+		sys.stdout.write (word)
+		print " ",
+		sys.stdout.flush()
+		time.sleep(randVariable)
+else:
+	print "okay..."
+	time.sleep(.3)
+	print "starting up game..."
+
+everything = pygame.sprite.RenderUpdates()
+everything2 = pygame.sprite.RenderUpdates()
+deathbolts = pygame.sprite.RenderUpdates()
+boombolts = pygame.sprite.RenderUpdates()
+speedbolts = pygame.sprite.RenderUpdates()
+sonics = pygame.sprite.RenderUpdates()
+booms = pygame.sprite.RenderUpdates()
+health = 20
+regen = 30
+stamina = 350
+dead = 0
+saved = 0
+remainingEnemies = 6
+rtn = [0,0]
+rtn2 = [0,0]
+
+class Moveable(pygame.sprite.Sprite):
+	def __init__(self,pos,imageFileName):
+		pygame.sprite.Sprite.__init__(self)
+		self.init2(pos,imageFileName)
+	def init2(self,pos,imageFileName):
+		self.right = pygame.image.load(imageFileName).convert_alpha()
+		self.left = pygame.transform.flip(self.right,True,False)
+		self.vertical = pygame.transform.rotate(self.right,90)
+		self.image = self.right
+		self.rect = self.image.get_rect()
+		self.rect.center = pos
+	def move(self,dx,dy):
+		screen.fill((150,150,200),self.rect)
+		if dx > 0:
+			self.image = self.right
+		elif dx < 0:
+			self.image = self.left
+		collisions = pygame.sprite.spritecollide(self, everything, False)
+		for other in collisions:
+			if other != self:
+				(awayDx,awayDy) = self.moveRelative(other,-1)
+				dx = dx + 3*(awayDx)
+				dy = dy + 3*(awayDy)
+		self.rect.move_ip(dx,dy)
+	def LOS(self,coordinates):
+		self.vulnerable = pygame.rect.inflate(self.rect,250,250)
+		self.vulnerable.move_ip(coordinates)
+		#notes: coordinates are by 270, sent as object moves. If need be, a net direction will be decided by specific if statements on each situation. The weeping angels only move while in any given rectangles of those in a range of 270. For the purpose of blinking, if you don't "blink" using a button, each turn, your screen develops gradual problems. This makes blinking a habit in game, as not doing so will make the screen go all dim and flickery and eventually into darkness... Don't blink. Angels don't die but they can be tricked...
+	def moveRelative(self,other,speed):
+		dx = other.rect.x - self.rect.x
+		dy = other.rect.y - self.rect.y
+		if abs(dx) > abs(dy):
+			# other is farther away in x than in y
+			if dx > 0:
+				return (+speed,0)
+			else:
+				return (-speed,0)
+		else:
+			if dy > 0:
+				return (0,+speed)
+			else:
+				return (0,-speed)
+	def movePerpendicular(self,other,speed):
+		dx = other.rect.x - self.rect.x
+		dy = other.rect.y - self.rect.y
+		if abs(dx) > abs(dy):
+			# this is to dodge a projectile
+			if dy > 0:
+				if dx > 0:
+					return (+speed/2,+speed)
+				else:
+					return (-speed/2,+speed)
+			else:
+				if dx > 0:
+					return (+speed/2,-speed)
+				else:
+					return (-speed/2,-speed)
+		else:
+			if dx > 0:
+				if dy > 0:
+					return (+speed,+speed/2)
+				else:
+					return (+speed,-speed/2)
+			else:
+				if dy > 0:
+					return (-speed,+speed/2)
+				else:
+					return (-speed,-speed/2)
+	def rangeTo(self,other):
+		dx = other.rect.x - self.rect.x
+		dy = other.rect.y - self.rect.y
+		return math.sqrt(dx*dx + dy*dy)
+
+class Reactor(pygame.sprite.Sprite):
+	def __init__(self,pos):
+		pygame.sprite.Sprite.__init__(self)
+		self.image1 = pygame.image.load("/home/pi/trevor/reactor.png").convert_alpha()
+		self.boom = pygame.image.load("/home/pi/trevor/explosion.png").convert_alpha()
+		self.image = self.image1
+		self.rect = self.image.get_rect()
+		self.x = pos
+		self.rect.center = pos
+		self.dalekShots = 0
+		self.exploded = False
+		self.countdown = 6
+	def destruct(self):
+		print "boom!"
+		screen.fill((150,150,200),self.rect)
+                self.image = self.boom
+                self.rect = self.image.get_rect()
+                self.rect.center = self.x
+                everything.remove(self)
+                booms.add(self)
+		self.exploded = True
+	def PossibleExplode(self):
+		if self.exploded == False:
+                        collisions = pygame.sprite.spritecollide(self, sonics, False)
+                        for other in collisions:
+                                if other != self:
+                                        self.destruct()
+                        collisions = pygame.sprite.spritecollide(self, deathbolts, False)
+                        for other in collisions:
+                                if other != self:
+                                        self.dalekShots = self.dalekShots + 1
+                        if self.dalekShots == 3:
+                                self.destruct()
+			collisions = pygame.sprite.spritecollide(self,boombolts,False)
+			for other in collisions:
+				if other != self:
+					self.destruct()
+		else:
+			if self.countdown > 0:
+				self.countdown = self.countdown - 1
+				print self.countdown
+			if self.countdown == 0:
+				booms.remove(self)
+				screen.fill((150,150,200),self.rect)
+				reactors.remove(self)
+		return self.exploded
+
+class Bomb(pygame.sprite.Sprite):
+        def __init__(self,pos):
+                pygame.sprite.Sprite.__init__(self)
+                self.image1 = pygame.image.load("/home/pi/trevor/weaponsCacheBomb.png").convert_alpha()
+                self.boom = pygame.image.load("/home/pi/trevor/explosion.png").convert_alpha()
+                self.image = self.image1
+                self.rect = self.image.get_rect()
+                self.x = pos
+                self.rect.center = pos
+                self.dalekShots = 0
+                self.exploded = False
+                self.countdown = 3
+        def destruct(self):
+                print "boom!"
+                screen.fill((150,150,200),self.rect)
+                self.image = self.boom
+                self.rect = self.image.get_rect()
+                self.rect.center = self.x
+                everything.remove(self)
+                booms.add(self)
+                self.exploded = True
+        def PossibleExplode(self):
+                if self.exploded == False:
+                        collisions = pygame.sprite.spritecollide(self, sonics, False)
+                        for other in collisions:
+                                if other != self:
+                                        self.destruct()
+                        collisions = pygame.sprite.spritecollide(self, deathbolts, False)
+                        for other in collisions:
+                                if other != self:
+                                        self.dalekShots = self.dalekShots + 1
+			collisions = pygame.sprite.spritecollide(self,boombolts,False)
+			for other in collisions:
+				if other != self:
+					self.destruct()
+                        if self.dalekShots == 3:
+                                self.destruct()
+                else:
+                        if self.countdown > 0:
+                                self.countdown = self.countdown - 1
+                                print self.countdown
+                        else:
+                                booms.remove(self)
+                                screen.fill((150,150,200),self.rect)
+                                bombs.remove(self)
+                return self.exploded
+
+class Crate(pygame.sprite.Sprite):
+        def __init__(self,pos):
+                pygame.sprite.Sprite.__init__(self)
+                self.image1 = pygame.image.load("/home/pi/trevor/crate.png").convert_alpha()
+                self.boom = pygame.image.load("/home/pi/trevor/crateFalling.png").convert_alpha()
+                self.image = self.image1
+                self.rect = self.image.get_rect()
+                self.x = pos
+                self.rect.center = pos
+                self.dalekShots = 0
+                self.exploded = False
+                self.countdown = 3
+        def destruct(self):
+                print "boom!"
+                screen.fill((150,150,200),self.rect)
+                self.image = self.boom
+                self.rect = self.image.get_rect()
+                self.rect.center = self.x
+                booms.add(self)
+                self.exploded = True
+        def PossibleExplode(self):
+                if self.exploded == False:
+                        collisions = pygame.sprite.spritecollide(self, sonics, False)
+                        for other in collisions:
+                                if other != self:
+                                        self.destruct()
+			collisions = pygame.sprite.spritecollide(self, boombolts, False)
+                        for other in collisions:
+                                if other != self:
+                                        self.destruct()
+                else:
+                        if self.countdown > 0:
+                                self.countdown = self.countdown - 1
+                                print self.countdown
+                        if self.countdown == 0:
+                                booms.remove(self)
+                                screen.fill((150,150,200),self.rect)
+                                crates.remove(self)
+                return self.exploded
+
+class BoomBolt(Moveable):
+	def __init__(self,pos,direction):
+		Moveable.__init__(self,pos,"/home/pi/trevor/deathRay.png")
+		self.destructCountDown = 45
+		self.direction = direction
+		self.x = pos
+		self.boom = "/home/pi/trevor/explosion.png"
+		if abs(self.direction[1]) > abs(self.direction[0]):
+			self.image = self.vertical
+			self.rect = self.image.get_rect()
+			self.rect.center = pos
+		self.exploded = False
+                self.countdown = 3
+        def destruct(self):
+                print "boom!"
+                screen.fill((150,150,200),self.rect)
+                self.init2(self.rect.center,self.boom)
+                booms.add(self)
+                self.exploded = True
+        def PossibleExplode(self):
+                if self.exploded == False:
+			collisions = pygame.sprite.spritecollide(self, everything2, False)
+                        for other in collisions:
+                                if other != self:
+                                        self.destruct()
+                if self.exploded == True:
+                        if self.countdown > 0:
+                                self.countdown = self.countdown - 1
+                                print self.countdown
+                        if self.countdown == 0:
+				print "removing in progress..."
+                                booms.remove(self)
+                                screen.fill((150,150,200),self.rect)
+                                boombolts.remove(self)
+		return self.exploded
+	def update(self):
+		screen.fill((150,150,200),self.rect)
+		self.destructCountDown = self.destructCountDown - 1
+		if self.destructCountDown == 0:
+			return False
+		else:
+			if self.exploded == False:
+				self.rect.move_ip(*self.direction)
+				self.rect.move_ip(*self.direction)
+			return True
+
+class SpecialWeaponsDalek(Moveable):
+	def __init__(self,pos):
+		Moveable.__init__(self,pos,"/home/pi/trevor/specialWeaponsDalek.png")
+		self.boombolt = None
+		self.life = 300
+	def update(self):
+		self.move(*self.moveRelative(doctor,1))
+		if self.boombolt:
+			if self.boombolt.update() == False:
+				boombolts.remove(self.boombolt)
+				self.boombolt = None
+		elif self.rangeTo(doctor) < 200:
+			direction = self.moveRelative(doctor,6)
+			self.boombolt = BoomBolt(self.rect.center,direction)
+			boombolts.add(self.boombolt)
+		collisions = pygame.sprite.spritecollide(self, booms, False)
+		if len(collisions) > 0:
+			everything.remove(self)
+			boombolts.remove(self.boombolt)
+			booms.remove(self.boombolt)
+			weapondaleks.remove(self)
+
+class VentGate(pygame.sprite.Sprite):
+	def __init__(self,pos):
+		pygame.sprite.Sprite.__init__(self)
+		self.image1 = pygame.image.load("/home/pi/trevor/openGate.png").convert_alpha()
+		self.image2 = pygame.image.load("/home/pi/trevor/closedGate.png").convert_alpha()
+		self.image = self.image1
+		self.closed = False
+		self.rect = self.image.get_rect()
+		self.rect.center = pos
+	def openedClosed(self):
+		collisions = pygame.sprite.spritecollide(self, sonics, False)
+		for other in collisions:
+			if other != self:
+				if self.image == self.image1:
+					self.image = self.image2
+					everything.add(self)
+				else:
+					self.image = self.image1
+					everything.remove(self)
+					screen.fill((150,150,200),self.rect)
+
+class Wall(pygame.sprite.Sprite):
+	def __init__(self,pos):
+		pygame.sprite.Sprite.__init__(self)
+		self.image = pygame.image.load("/home/pi/trevor/barrier.png").convert()
+		self.rect = self.image.get_rect()
+		self.rect.center = pos
+
+class Tardis(pygame.sprite.Sprite):
+        def __init__(self,pos):
+                pygame.sprite.Sprite.__init__(self)
+                self.image = pygame.image.load("/home/pi/trevor/tardis.png").convert_alpha()
+                self.rect = self.image.get_rect()
+                self.rect.center = pos
+
+class DeathBolt(Moveable):
+	def __init__(self,pos,direction):
+		Moveable.__init__(self,pos,"/home/pi/trevor/deathRay.png")
+		self.destructCountDown = 39
+		self.direction = direction
+		if abs(self.direction[1]) > abs(self.direction[0]):
+			self.image = self.vertical
+			self.rect = self.image.get_rect()
+			self.rect.center = pos
+	def update(self):
+		screen.fill((150,150,200),self.rect)
+		self.destructCountDown = self.destructCountDown - 1
+		if self.destructCountDown == 0:
+			return False
+		else:
+			self.rect.move_ip(*self.direction)
+			self.rect.move_ip(*self.direction)
+			collisions = pygame.sprite.spritecollide(self, everything, False)
+			for other in collisions:
+				if other == doctor:
+					print "you just got shot..."
+					self.rect.move_ip(*self.direction)
+					self.rect.move_ip(*self.direction)
+					self.rect.move_ip(*self.direction)
+					self.rect.move_ip(*self.direction)
+					self.rect.move_ip(*self.direction)
+					self.rect.move_ip(*self.direction)
+					self.rect.move_ip(*self.direction)
+					self.rect.move_ip(*self.direction)
+					self.rect.move_ip(*self.direction)
+			return True
+
+class Dalek(Moveable):
+	def __init__(self,pos):
+		Moveable.__init__(self,pos,"/home/pi/trevor/dalek.png")
+		self.deathbolt = None
+	def update(self):
+		if self.rangeTo(doctor) < 415:
+			self.move(*self.moveRelative(doctor,1))
+		elif self.rangeTo(pond) < 300:
+			self.move(*self.moveRelative(pond,1))
+		for civilian in civilians:
+			if self.rangeTo(civilian) < 250:
+				self.move(*self.moveRelative(civilian,1))
+		if self.deathbolt:
+			if self.deathbolt.update() == False:
+				deathbolts.remove(self.deathbolt)
+				self.deathbolt = None
+		elif self.rangeTo(doctor) < 200:
+			direction = self.moveRelative(doctor,6)
+			self.deathbolt = DeathBolt(self.rect.center,direction)
+			deathbolts.add(self.deathbolt)
+		for civilian in civilians:
+			if self.deathbolt == None and self.rangeTo(civilian) < 150:
+				direction = self.moveRelative(civilian,6)
+				self.deathbolt = DeathBolt(self.rect.center,direction)
+				deathbolts.add(self.deathbolt)
+		if self.deathbolt == None and self.rangeTo(pond) < 175:
+			direction = self.moveRelative(pond,6)
+			self.deathbolt = DeathBolt(self.rect.center,direction)
+			deathbolts.add(self.deathbolt)
+		collisions = pygame.sprite.spritecollide(self, booms, False)
+		for other in collisions:
+			if other != self:
+				everything.remove(self)
+				deathbolts.remove(self.deathbolt)
+				daleks.remove(self)
+
+class SpeedyDalek(Moveable):
+	def __init__(self,pos):
+		Moveable.__init__(self,pos,"/home/pi/trevor/specialWeaponsDalek.png")
+		self.speedbolt = None
+	def update(self):
+		if self.rangeTo(doctor) < 415:
+			self.move(*self.moveRelative(doctor,2))
+		elif self.rangeTo(pond) < 300:
+			self.move(*self.moveRelative(pond,2))
+		for civilian in civilians:
+			if self.rangeTo(civilian) < 250:
+				self.move(*self.moveRelative(civilian,2))
+		if self.speedbolt:
+			if self.speedbolt.update() == False:
+				speedbolts.remove(self.speedbolt)
+				self.speedbolt = None
+		elif self.rangeTo(doctor) < 200:
+			direction = self.moveRelative(doctor,6)
+			self.speedbolt = SpeedBolt(self.rect.center,direction)
+			speedbolts.add(self.speedbolt)
+		for boombolt in boombolts:
+			if self.rangeTo(boombolt) < 250:
+				self.move(*self.movePerpendicular(boombolt,-3))
+		collisions = pygame.sprite.spritecollide(self, booms, False)
+		for other in collisions:
+			if other != self:
+				everything.remove(self)
+				speedbolts.remove(self.speedbolt)
+				speedydaleks.remove(self)
+
+class SpeedBolt(Moveable):
+	def __init__(self,pos,direction):
+		Moveable.__init__(self,pos,"/home/pi/trevor/deathRay.png")
+		self.destructCountDown = 8
+		self.direction = direction
+		self.shots = 0
+		if abs(self.direction[1]) > abs(self.direction[0]):
+			self.image = self.vertical
+			self.rect = self.image.get_rect()
+			self.rect.center = pos
+	def update(self):
+		screen.fill((150,150,200),self.rect)
+		self.destructCountDown = self.destructCountDown - 1
+		if self.destructCountDown == 0:
+			return False
+		else:
+			self.rect.move_ip(*self.direction)
+			self.rect.move_ip(*self.direction)
+			self.rect.move_ip(*self.direction)
+			self.rect.move_ip(*self.direction)
+			self.rect.move_ip(*self.direction)
+			self.rect.move_ip(*self.direction)
+			collisions = pygame.sprite.spritecollide(self, everything, False)
+			for other in collisions:
+				if other == doctor:
+					print "you just got shot..."
+					self.rect.move_ip(*self.direction)
+					self.rect.move_ip(*self.direction)
+					self.rect.move_ip(*self.direction)
+					self.rect.move_ip(*self.direction)
+					self.rect.move_ip(*self.direction)
+					self.rect.move_ip(*self.direction)
+					self.rect.move_ip(*self.direction)
+					self.rect.move_ip(*self.direction)
+					self.rect.move_ip(*self.direction)
+					print "Game Over --you died"
+					raise SystemExit
+			return True
+
+
+
+class Civilian(Moveable):
+	def __init__(self,pos):
+		Moveable.__init__(self,pos,"/home/pi/trevor/civilian.png")
+	def update(self,saved,dead):
+		for dalek in daleks:
+			if self.rangeTo(dalek) < 350:
+				self.move(*self.moveRelative(dalek,-2))
+		for dalek in speedydaleks:
+			if self.rangeTo(dalek) < 350:
+				self.move(*self.moveRelative(dalek,-2))
+		for barrier in barriers:
+			if self.rangeTo(barrier) < 5:
+				self.move(*self.moveRelative(barrier,-2))
+		if self.rangeTo(doctor) < 350:
+			self.move(*self.moveRelative(doctor,2))
+		elif self.rangeTo(pond) < 350:
+			self.move(*self.moveRelative(pond,2))
+		for tardis in tardises:
+			if self.rangeTo(tardis) < 50:
+				saved = saved + 1
+				everything.remove(self)
+				civilians.remove(self)
+				#print saved, "saved"
+		collisions = pygame.sprite.spritecollide(self, booms, False)
+		for other in collisions:
+			if other != self:
+				everything.remove(self)
+				civilians.remove(self)
+				dead = dead + 1
+				#print dead
+		collisions = pygame.sprite.spritecollide(self, deathbolts, False)
+		for other in collisions:
+			if other != self:
+				everything.remove(self)
+				civilians.remove(self)
+				dead = dead + 1
+				#print dead
+		#print saved, dead
+		rtn2 = [saved,dead]
+		#print rtn2
+		return rtn2
+
+"""
+class WeepingAngel(Moveable):
+	def __init__(self,pos):
+		Moveable.__init__(self,pos,"/home/pi/trevor/weepingAngel.png")
+		self.attack = False
+		self.doctorPos = "left"
+		self.angelPos = "left"
+		#for the angel pos, left means right, but this is easiest to tell if directions are inverse(aka that the doctor and weeping angels are facing eachother)
+		self.timeLapse = 15
+	def update(self,doctorpos):
+		self.doctorPos = doctorpos
+		if self.rangeTo(doctor) < 400:
+			if self.doctorPos != self.angelPos:
+				self.attacking()
+	def attacking(self):
+		if self.timeLapse < 0:
+			self.move(*self.moveRelative(doctor,50))
+			self.timeLapse = 15 
+		else:
+			self.timeLapse = self.timeLapse -1
+
+class Companion(Moveable):
+	def __init__(self,pos):
+		Moveable.__init__(self,pos,"/home/pi/trevor/amelia pond.png")
+		self.thingRight = False
+		self.thingLeft = False
+		self.thingDown = False
+		self.thingUp = False
+		self.d = "blegh!"
+	def update(self):
+		for item in pygame.event.get():
+			if item.type == pygame.KEYDOWN and item.key == 275:
+				self.thingRight = True
+				self.d = (5,0)
+			if item.type == pygame.KEYUP and item.key == 275:
+				self.thingRight = False
+			if item.type == pygame.KEYDOWN and item.key == 273:
+				self.thingUp = True
+				self.d = (0,-5)
+			if item.type == pygame.KEYUP and item.key == 273:
+				self.thingUp = False
+			if item.type == pygame.KEYDOWN and item.key == 274:
+				self.thingDown = True
+				self.d = (0,5)
+			if item.type == pygame.KEYUP and item.key == 274:
+				self.thingDown = False
+			if item.type == pygame.KEYDOWN and item.key == 276:
+				self.thingLeft = True
+				self.d = (-5,0)
+			if item.type == pygame.KEYUP and item.key == 276: 
+				self.thingLeft = False
+			if item.type == pygame.KEYDOWN and item.key == 113:
+				raise SystemExit
+			if item.type == pygame.KEYDOWN and item.key == 115:
+				self.sonicKey = True
+			if item.type == pygame.KEYUP and item.key == 115:
+				self.sonicKey = False
+			if item.type == pygame.KEYDOWN and item.key == pygame.K_h:
+				self.healing = True
+			if item.type == pygame.KEYUP and item.key == pygame.K_h:
+                                self.healing = False
+		if self.thingRight == True:
+			self.move(2,0)
+		if self.thingLeft == True:
+			self.move(-2,0)
+		if self.thingUp == True:
+			self.move(0,-2)
+		if self.thingDown == True:
+			self.move(0,2)
+	def checkHealth(self,health,stamina,regen):
+		if health < 0:
+			print "badly injured, get to the tardis"
+                	if stamina < 0:
+                        	print "Game Over--you died"
+                       		raise SystemExit
+                	regenorate =  pygame.sprite.spritecollide(self, tardises, False)
+                        for other in regenorate:
+                               	if other != self:
+                                       	if regen > 70:
+                                               	health = 18
+					else:
+						print "insufficient energy..."
+		collisionsA = pygame.sprite.spritecollide(self, deathbolts, False)
+                for other in collisionsA:
+	                if other != self:
+                        	health = health -3
+		collisionsb = pygame.sprite.spritecollide(self, booms, False)
+		for other in collisionsb:
+			if other != self:
+				health = health -4
+		return health
+"""
+
+class Pond(Moveable):
+	def __init__(self,pos):
+		Moveable.__init__(self,pos,"/home/pi/trevor/amelia pond.png")
+		self.sonicWave = None
+	def update(self):
+		if self.rangeTo(doctor) < 375:
+			self.move(*self.moveRelative(doctor,2))
+		else:
+			for dalek in daleks:
+				if self.rangeTo(dalek) < 375:
+					self.move(*self.moveRelative(dalek,-2))
+			for speedydalek in speedydaleks:
+				if self.rangeTo(speedydalek) < 375:
+					self.move(*self.moveRelative(speedydalek,-2))
+			for weapondalek in weapondaleks:
+				if self.rangeTo(weapondalek) < 375:
+					self.move(*self.moveRelative(weapondalek,-2))
+		for bomb in bombs:
+			if self.rangeTo(bomb) > 100 and self.rangeTo(bomb) < 250:
+				if self.sonicWave:
+					if self.sonicWave.update() == False:
+						sonics.remove(self.sonicWave)
+						self.sonicWave = None
+					else:
+						direction = self.moveRelative(bomb,6)
+						self.sonicWave = sonicWave(self.rect.center,direction)
+						sonics.add(self.sonicWave)
+		for boom in booms:
+			if self.rangeTo(boom) < 30:
+				self.move(*self.moveRelative(boom,-6))
+		for deathbolt in deathbolts:
+			if self.rangeTo(deathbolt) < 200:
+				if self.rangeTo(doctor) < 375:
+					self.move(*self.movePerpendicular(deathbolt,-2))
+				else:
+					for dalek in daleks:
+						if self.rangeTo(dalek) < 375:
+							self.move(*self.movePerpendicular(deathbolt,-2))
+		for speedbolt in speedbolts:
+			if self.rangeTo(speedbolt) < 230:
+				if self.rangeTo(doctor) < 375:
+					self.move(*self.movePerpendicular(speedbolt,-2))
+				else:
+					for dalek in daleks:
+						if self.rangeTo(dalek) < 375:
+							self.move(*self.movePerpendicular(speedbolt,-2))
+				self.move(*self.movePerpendicular(speedbolt,-5))
+		for boombolt in boombolts:
+			if self.rangeTo(boombolt) < 200:
+				self.move(*self.movePerpendicular(boombolt,-5))
+		for barrier in barriers:
+			if self.rangeTo(barrier) < 5:
+				self.move(*self.moveRelative(barrier,-3))
+		collisions1 = pygame.sprite.spritecollide(self, booms, False)
+		for other in collisions1:
+			if other != self:
+				everything.remove(self)
+				ponds.remove(self)
+				sonics.remove(self.sonicWave)
+				print "Game Over --Amelia Pond died"
+				raise SystemExit
+		collisions2 = pygame.sprite.spritecollide(self, deathbolts, False)
+		for other in collisions2:
+			if other != self:
+				everything.remove(self)
+				ponds.remove(self)
+				sonics.remove(self.sonicWave)
+				print "Game Over --Amelia Pond died"
+				raise SystemExit
+
+class sonicWave(Moveable):
+	def __init__(self,pos,direction):
+		Moveable.__init__(self,pos,"/home/pi/trevor/sonicBolt.png")
+		self.destructCountDown = 45
+		self.direction = direction
+		if abs(self.direction[1]) > abs(self.direction[0]):
+			self.image = self.vertical
+			self.rect = self.image.get_rect()
+			self.rect.center = pos
+	def update(self):
+		screen.fill((150,150,200),self.rect)
+		self.destructCountDown = self.destructCountDown - 1
+		if self.destructCountDown == 0:
+			return False
+		else:
+			self.rect.move_ip(*self.direction)
+			self.rect.move_ip(*self.direction)
+			collisions = pygame.sprite.spritecollide(self, ventGates, False)
+			for other in collisions:
+				if other != self:
+					self.destructCountDown = 1
+			collisions = pygame.sprite.spritecollide(self, reactors, False)
+			for other in collisions:
+				if other != self:
+					self.destructCountDown = 1
+			return True
+
+
+class Doctor(Moveable):
+	def __init__(self,pos):
+		Moveable.__init__(self,pos,"/home/pi/trevor/doctor2.png")
+		self.thingRight = False
+		self.thingLeft = False
+		self.thingDown = False
+		self.thingUp = False
+		self.sonicKey = False
+		self.d = "blegh!"
+		self.sonicWave = None
+		self.healing = False
+		self.sprinting = False
+		self.exploding = False
+		self.counter = 0
+	def update(self):
+		for item in pygame.event.get():
+			if item.type == pygame.KEYDOWN and item.key == 275:
+				self.thingRight = True
+				self.d = (5,0)
+			if item.type == pygame.KEYUP and item.key == 275:
+				self.thingRight = False
+			if item.type == pygame.KEYDOWN and item.key == 273:
+				self.thingUp = True
+				self.d = (0,-5)
+			if item.type == pygame.KEYUP and item.key == 273:
+				self.thingUp = False
+			if item.type == pygame.KEYDOWN and item.key == 274:
+				self.thingDown = True
+				self.d = (0,5)
+			if item.type == pygame.KEYUP and item.key == 274:
+				self.thingDown = False
+			if item.type == pygame.KEYDOWN and item.key == 276:
+				self.thingLeft = True
+				self.d = (-5,0)
+			if item.type == pygame.KEYUP and item.key == 276: 
+				self.thingLeft = False
+			if item.type == pygame.KEYDOWN and item.key == 113:
+				raise SystemExit
+			if item.type == pygame.KEYDOWN and item.key == 115:
+				self.sonicKey = True
+			if item.type == pygame.KEYUP and item.key == 115:
+				self.sonicKey = False
+			if item.type == pygame.KEYDOWN and item.key == pygame.K_h:
+				self.healing = True
+			if item.type == pygame.KEYUP and item.key == pygame.K_h:
+                                self.healing = False
+		if self.thingRight == True:
+			self.move(2,0)
+		if self.thingLeft == True:
+			self.move(-2,0)
+		if self.thingUp == True:
+			self.move(0,-2)
+		if self.thingDown == True:
+			self.move(0,2)
+	def checkHealth(self,health,stamina,regen):
+		if health < 0:
+			print "badly injured, get to the tardis"
+                	if stamina < 0:
+                        	print "Game Over--you died"
+                       		raise SystemExit
+                	regenorate =  pygame.sprite.spritecollide(self, tardises, False)
+                        for other in regenorate:
+                               	if other != self:
+                                       	if regen > 70:
+                                               	health = 18
+					else:
+						print "insufficient energy..."
+		collisionsA = pygame.sprite.spritecollide(self, deathbolts, False)
+                for other in collisionsA:
+	                if other != self:
+                        	health = health -3
+		collisionsC = pygame.sprite.spritecollide(self, speedbolts, False)
+                for other in collisionsC:
+	                if other != self:
+                        	health = health -30
+				print "ow"
+		collisionsb = pygame.sprite.spritecollide(self, booms, False)
+		for other in collisionsb:
+			if other != self:
+				health = health -4
+		return health
+	def heal(self, health, regen):
+		rtn = [health,regen]
+		if self.healing == True:
+			if health < 20:
+				if regen > 70:
+					regen = regen - 75
+					health = health + 1
+					rtn = [health, regen]
+					print "healing... health at ", health, " out of 20"
+				else:
+					print "cannot heal, insufficient regenorations"
+			else:
+				print "uninjured"
+		return rtn
+	def sonicDoor(self):
+		if self.sonicWave:
+			if self.sonicWave.update() == False:
+				sonics.remove(self.sonicWave)
+				self.sonicWave = None
+		elif self.sonicKey == True:
+			direction = self.d
+			self.sonicWave = sonicWave(self.rect.center,direction)
+			sonics.add(self.sonicWave)
+
+pygame.init()
+screen = pygame.display.set_mode((800,800))
+screen.fill((150,150,200))
+pygame.display.update()
+daleks = pygame.sprite.RenderUpdates()
+speedydaleks = pygame.sprite.RenderUpdates()
+weapondaleks = pygame.sprite.RenderUpdates()
+doctors = pygame.sprite.RenderUpdates()
+barriers = pygame.sprite.RenderUpdates()
+ventGates = pygame.sprite.RenderUpdates()
+reactors = pygame.sprite.RenderUpdates()
+bombs = pygame.sprite.RenderUpdates()
+crates = pygame.sprite.RenderUpdates()
+tardises = pygame.sprite.RenderUpdates()
+civilians = pygame.sprite.RenderUpdates()
+ponds = pygame.sprite.RenderUpdates()
+
+speedydaleks.add(SpeedyDalek((150,300)),SpeedyDalek((150,600)))
+
+civilians.add(Civilian((200,500)),Civilian((625,600)),Civilian((400,400)),Civilian((700,100)),Civilian((700,500)),Civilian((400,500)))
+
+crates.add(Crate((100,300)),Crate((500,650)))
+
+reactors.add(Reactor((700,600)),Reactor((100,400)),Reactor((600,100)))
+
+bombs.add(Bomb((100,500)),Bomb((500,500)),Bomb((100,500)))
+
+ventGates.add(VentGate((600,600)),VentGate((100,150)),VentGate((100,600)),VentGate((667,360)))
+
+daleks.add(Dalek((100,200)),Dalek((300,400)),Dalek((300,700)),Dalek((500,100)),Dalek((300,100)))
+
+weapondaleks.add(SpecialWeaponsDalek((200,300)))
+
+barriers.add(Wall((150,150)),Wall((0,0)),Wall((0,45)),Wall((0,90)),Wall((0,135)),Wall((0,180)),Wall((0,225)),Wall((0,270)),Wall((0,315)),Wall((0,360)))
+barriers.add(Wall((0,495)),Wall((0,540)),Wall((0,585)))
+barriers.add(Wall((0,405)),Wall((0,450)),Wall((0,595)),Wall((0,640)),Wall((0,685)),Wall((0,730)),Wall((0,775)),Wall((0,800)))
+
+barriers.add(Wall((197,263)),Wall((0,800)),Wall((45,0)),Wall((90,0)),Wall((135,0)),Wall((180,0)),Wall((225,0)),Wall((270,0)),Wall((315,0)),Wall((360,0)))
+barriers.add(Wall((495,0)),Wall((540,0)),Wall((585,0)))
+barriers.add(Wall((405,0)),Wall((450,0)),Wall((595,0)),Wall((640,0)),Wall((685,0)),Wall((730,0)),Wall((775,0)),Wall((800,0)))
+
+barriers.add(Wall((625,532)),Wall((300,548)),Wall((800,45)),Wall((800,90)),Wall((800,135)),Wall((800,180)),Wall((800,225)),Wall((800,270)),Wall((800,315)),Wall((800,360)))
+barriers.add(Wall((800,495)),Wall((800,540)),Wall((800,585)))
+barriers.add(Wall((800,405)),Wall((800,450)),Wall((800,595)),Wall((800,640)),Wall((800,685)),Wall((800,730)),Wall((800,775)),Wall((800,800)))
+
+barriers.add(Wall((600,225)),Wall((45,800)),Wall((90,800)),Wall((135,800)),Wall((180,800)),Wall((225,800)),Wall((270,800)),Wall((315,800)),Wall((360,800)))
+barriers.add(Wall((495,800)),Wall((540,800)),Wall((585,800)))
+barriers.add(Wall((405,800)),Wall((450,800)),Wall((595,800)),Wall((640,800)),Wall((685,800)),Wall((730,800)),Wall((775,800)),Wall((800,800)))
+
+
+barriers.add(Wall((725,250)),Wall((430,709)),Wall((409,612)),Wall((400,45)),Wall((400,90)),Wall((400,135)),Wall((400,180)),Wall((400,225)),Wall((400,270)),Wall((400,315)),Wall((400,360)))
+barriers.add(Wall((445,360)),Wall((490,360)),Wall((535,360)),Wall((570,360)),Wall((615,360)),Wall((715,360)),Wall((750,360)),Wall((795,360)))
+
+
+doctor = Doctor((500,600))
+doctors.add(doctor)
+
+pond = Pond((150,400))
+ponds.add(pond)
+
+tardis = Tardis((700,700))
+tardises.add(tardis)
+
+everything.add(daleks,doctors,barriers,reactors,bombs,weapondaleks,ponds,civilians,speedydaleks)
+everything2.add(daleks,doctors,barriers,reactors,bombs,ponds,civilians,speedydaleks)
+
+print len(everything)
+
+pygame.display.update(daleks.draw(screen))
+pygame.display.update(doctors.draw(screen))
+pygame.display.update(barriers.draw(screen))
+pygame.display.update(reactors.draw(screen))
+pygame.display.update(bombs.draw(screen))
+pygame.display.update(crates.draw(screen))
+pygame.display.update(tardises.draw(screen))
+pygame.display.update(weapondaleks.draw(screen))
+pygame.display.update(civilians.draw((screen)))
+pygame.display.update(ponds.draw((screen)))
+pygame.display.update(speedydaleks.draw((screen)))
+
+def PossibleReconsrtruct():
+	variable = random.randint(1,700)
+	if variable == 9:
+		pygame.display.update(barriers.draw(screen))
+
+echoHealth = False
+
+while True:
+	daleks.update()
+	weapondaleks.update()
+	speedydaleks.update()
+	pond.update()
+	rtn2 = civilians.update(saved, dead)
+#	saved = rtn2[0]
+#	dead = rtn2[1]
+	doctor.update()
+	doctor.sonicDoor()
+	health = doctor.checkHealth(health,stamina,regen)
+	rtn = doctor.heal(health,regen)
+	health = rtn[0]
+	regen = rtn[1]
+	if health < 0:
+		stamina = stamina - 1
+		echoHealth = True
+	if echoHealth == True:
+		if health > 0:
+			regen = regen - 100
+			stamina = 350
+	time.sleep(0.04)
+	if regen < 900:
+		regen = regen + .2
+	pygame.display.update(daleks.draw(screen))
+	pygame.display.update(doctors.draw(screen))
+	pygame.display.update(deathbolts.draw(screen))
+	pygame.display.update(boombolts.draw(screen))
+	pygame.display.update(speedbolts.draw((screen)))
+	pygame.display.update(sonics.draw(screen))
+	pygame.display.update(ventGates.draw(screen))
+	pygame.display.update(crates.draw(screen))
+	pygame.display.update(tardises.draw(screen))
+	pygame.display.update(weapondaleks.draw(screen))
+	pygame.display.update(civilians.draw(screen))
+	pygame.display.update(ponds.draw((screen)))
+	pygame.display.update(speedydaleks.draw((screen)))
+	PossibleReconsrtruct()
+	for VentGate in ventGates:
+		VentGate.openedClosed()
+	for reactor in reactors:
+		detonation = reactor.PossibleExplode()
+		if detonation == True:
+			pygame.display.update(reactors.draw(screen))
+	for bomb in bombs:
+                detonation = bomb.PossibleExplode()
+                if detonation == True:
+                        pygame.display.update(bombs.draw(screen))
+	for crate in crates:
+		detonation = crate.PossibleExplode()
+		if detonation == True:
+			pygame.display.update(crates.draw(screen))
+	for boombolt in boombolts:
+		detonation = boombolt.PossibleExplode()
+		if detonation == True:
+			pygame.display.update(boombolts.draw(screen))
+	if dead == 3:
+		print "Game Over"
+		raise SystemExit
+	if saved == 3:
+		print "you win!"
+	#tesselector, time rifts, pandorica, master, terminals for map control, ptyradactal pests, demons run
