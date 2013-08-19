@@ -575,6 +575,16 @@ class WeepingAngel(Moveable):
 		else:
 			self.timeLapse = self.timeLapse -1
 
+class Silence(Moveable):
+	def __init__(self,pos):
+		Moveable.__init__(self,pos,"/home/trevor/doctorWhoGame/silence .png")
+	def update(self,sights):
+		for part in sights:
+			if part == self:
+				continue
+			if self.rangeTo(part) < 100:
+				part.move(part.moveRelative(self,-7))
+
 
 """
 
