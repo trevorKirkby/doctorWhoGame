@@ -20,7 +20,7 @@ else:
 	print "okay..."
 	time.sleep(.3)
 
-level = raw_input("enter tardis target phrase (a blank coordinates takes you to a standard scenario, which is a good start, though not any easier than some of the other ones): ")
+level = raw_input("enter tardis target phrase (blank coordinates will take you to setup1, a good place to start): ")
 
 print "starting up game..."
 
@@ -38,12 +38,10 @@ regen = 30
 stamina = 350
 dead = 0
 saved = 0
-remainingEnemies = 6
 rtn = [0,0]
 rtn2 = [0,0]
 
 class Moveable(pygame.sprite.Sprite):
-	#factor in a new component: the last direction moved, and therefore the position it is facing...
 	def __init__(self,pos,imageFileName):
 		pygame.sprite.Sprite.__init__(self)
 		self.init2(pos,imageFileName)
@@ -70,10 +68,6 @@ class Moveable(pygame.sprite.Sprite):
 				dx = dx + 9*(awayDx)
 				dy = dy + 9*(awayDy)
 		self.rect.move_ip(dx,dy)
-	def LOS(self,coordinates):
-		self.vulnerable = pygame.rect.inflate(self.rect,250,250)
-		self.vulnerable.move_ip(coordinates)
-		#notes: coordinates are by 270, sent as object moves. If need be, a net direction will be decided by specific if statements on each situation. The weetrevorng angels only move while in any given rectangles of those in a range of 270. For the purpose of blinking, if you don't "blink" using a button, each turn, your screen develops gradual problems. This makes blinking a habit in game, as not doing so will make the screen go all dim and flickery and eventually into darkness... Don't blink. Angels don't die but they can be tricked...
 	def moveRelative(self,other,speed):
 		dx = other.rect.x - self.rect.x
 		dy = other.rect.y - self.rect.y
@@ -122,8 +116,8 @@ class Moveable(pygame.sprite.Sprite):
 class Reactor(pygame.sprite.Sprite):
 	def __init__(self,pos):
 		pygame.sprite.Sprite.__init__(self)
-		self.image1 = pygame.image.load("/home/trevor/doctorWhoGame/reactor.png").convert_alpha()
-		self.boom = pygame.image.load("/home/trevor/doctorWhoGame/explosion.png").convert_alpha()
+		self.image1 = pygame.image.load("reactor.png").convert_alpha()
+		self.boom = pygame.image.load("explosion.png").convert_alpha()
 		self.image = self.image1
 		self.rect = self.image.get_rect()
 		self.x = pos
@@ -171,8 +165,8 @@ class Reactor(pygame.sprite.Sprite):
 class Bomb(pygame.sprite.Sprite):
         def __init__(self,pos):
                 pygame.sprite.Sprite.__init__(self)
-                self.image1 = pygame.image.load("/home/trevor/doctorWhoGame/weaponsCacheBomb.png").convert_alpha()
-                self.boom = pygame.image.load("/home/trevor/doctorWhoGame/explosion.png").convert_alpha()
+                self.image1 = pygame.image.load("weaponsCacheBomb.png").convert_alpha()
+                self.boom = pygame.image.load("explosion.png").convert_alpha()
                 self.image = self.image1
                 self.rect = self.image.get_rect()
                 self.x = pos
@@ -220,8 +214,8 @@ class Bomb(pygame.sprite.Sprite):
 class Crate(pygame.sprite.Sprite):
         def __init__(self,pos):
                 pygame.sprite.Sprite.__init__(self)
-                self.image1 = pygame.image.load("/home/trevor/doctorWhoGame/crate.png").convert_alpha()
-                self.boom = pygame.image.load("/home/trevor/doctorWhoGame/crateFalling.png").convert_alpha()
+                self.image1 = pygame.image.load("crate.png").convert_alpha()
+                self.boom = pygame.image.load("crateFalling.png").convert_alpha()
                 self.image = self.image1
                 self.rect = self.image.get_rect()
                 self.x = pos
@@ -261,11 +255,11 @@ class Crate(pygame.sprite.Sprite):
 
 class BoomBolt(Moveable):
 	def __init__(self,pos,direction,parent=None):
-		Moveable.__init__(self,pos,"/home/trevor/doctorWhoGame/deathRay.png")
+		Moveable.__init__(self,pos,"deathRay.png")
 		self.destructCountDown = 45
 		self.direction = direction
 		self.x = pos
-		self.boom = "/home/trevor/doctorWhoGame/explosion.png"
+		self.boom = "explosion.png"
 		if abs(self.direction[1]) > abs(self.direction[0]):
 			self.image = self.vertical
 			self.rect = self.image.get_rect()
@@ -305,7 +299,7 @@ class BoomBolt(Moveable):
 
 class SpecialWeaponsDalek(Moveable):
 	def __init__(self,pos):
-		Moveable.__init__(self,pos,"/home/trevor/doctorWhoGame/specialWeaponsDalek.png")
+		Moveable.__init__(self,pos,"specialWeaponsDalek.png")
 		self.boombolt = None
 		self.life = 300
 	def update(self):
@@ -330,8 +324,8 @@ class SpecialWeaponsDalek(Moveable):
 class VentGate(pygame.sprite.Sprite):
 	def __init__(self,pos):
 		pygame.sprite.Sprite.__init__(self)
-		self.image1 = pygame.image.load("/home/trevor/doctorWhoGame/openGate.png").convert_alpha()
-		self.image2 = pygame.image.load("/home/trevor/doctorWhoGame/closedGate.png").convert_alpha()
+		self.image1 = pygame.image.load("openGate.png").convert_alpha()
+		self.image2 = pygame.image.load("closedGate.png").convert_alpha()
 		self.image = self.image1
 		self.closed = False
 		self.rect = self.image.get_rect()
@@ -351,7 +345,7 @@ class VentGate(pygame.sprite.Sprite):
 class Beamer(pygame.sprite.Sprite):
 	def __init__(self,pos,coordinates):
 		pygame.sprite.Sprite.__init__(self)
-		self.image = pygame.image.load("/home/trevor/doctorWhoGame/beamer.png").convert_alpha()
+		self.image = pygame.image.load("beamer.png").convert_alpha()
 		self.rect = self.image.get_rect()
 		self.rect.center = pos
 		self.coordinates = coordinates
@@ -367,7 +361,7 @@ class Beamer(pygame.sprite.Sprite):
 class Wall(pygame.sprite.Sprite):
 	def __init__(self,pos):
 		pygame.sprite.Sprite.__init__(self)
-		self.image = pygame.image.load("/home/trevor/doctorWhoGame/barrier.png").convert()
+		self.image = pygame.image.load("barrier.png").convert()
 		self.rect = self.image.get_rect()
 		self.rect.center = pos
 	def update(self):
@@ -380,7 +374,7 @@ class Wall(pygame.sprite.Sprite):
 class StoneWall(pygame.sprite.Sprite):
 	def __init__(self,pos):
 		pygame.sprite.Sprite.__init__(self)
-		self.image = pygame.image.load("/home/trevor/doctorWhoGame/stonewall.png").convert()
+		self.image = pygame.image.load("stonewall.png").convert()
 		self.rect = self.image.get_rect()
 		self.rect.center = pos
 	def update(self):
@@ -393,13 +387,13 @@ class StoneWall(pygame.sprite.Sprite):
 class Tardis(pygame.sprite.Sprite):
         def __init__(self,pos):
                 pygame.sprite.Sprite.__init__(self)
-                self.image = pygame.image.load("/home/trevor/doctorWhoGame/tardis.png").convert_alpha()
+                self.image = pygame.image.load("tardis.png").convert_alpha()
                 self.rect = self.image.get_rect()
                 self.rect.center = pos
 
 class DeathBolt(Moveable):
 	def __init__(self,pos,direction):
-		Moveable.__init__(self,pos,"/home/trevor/doctorWhoGame/deathRay.png")
+		Moveable.__init__(self,pos,"deathRay.png")
 		self.destructCountDown = 39
 		self.direction = direction
 		if abs(self.direction[1]) > abs(self.direction[0]):
@@ -431,7 +425,7 @@ class DeathBolt(Moveable):
 
 class Dalek(Moveable):
 	def __init__(self,pos):
-		Moveable.__init__(self,pos,"/home/trevor/doctorWhoGame/dalek.png")
+		Moveable.__init__(self,pos,"dalek.png")
 		self.deathbolt = None
 	def update(self):
 		if self.rangeTo(doctor) < 415:
@@ -468,7 +462,7 @@ class Dalek(Moveable):
 
 class SpeedyDalek(Moveable):
 	def __init__(self,pos):
-		Moveable.__init__(self,pos,"/home/trevor/doctorWhoGame/specialWeaponsDalek.png")
+		Moveable.__init__(self,pos,"specialWeaponsDalek.png")
 		self.speedbolt = None
 	def update(self):
 		if self.rangeTo(doctor) < 415:
@@ -494,7 +488,7 @@ class SpeedyDalek(Moveable):
 
 class SpeedBolt(Moveable):
 	def __init__(self,pos,direction):
-		Moveable.__init__(self,pos,"/home/trevor/doctorWhoGame/deathRay.png")
+		Moveable.__init__(self,pos,"deathRay.png")
 		self.destructCountDown = 8
 		self.direction = direction
 		self.shots = 0
@@ -534,7 +528,7 @@ class SpeedBolt(Moveable):
 
 class Civilian(Moveable):
 	def __init__(self,pos):
-		Moveable.__init__(self,pos,"/home/trevor/doctorWhoGame/civilian.png")
+		Moveable.__init__(self,pos,"civilian.png")
 		self.gone = False
 	def update(self,saved1,dead1):
 		if self.gone == None:
@@ -588,25 +582,21 @@ class Civilian(Moveable):
 
 class WeepingAngel(Moveable):
 	def __init__(self,pos):
-		Moveable.__init__(self,pos,"/home/trevor/doctorWhoGame/weepingAngel.png")
+		Moveable.__init__(self,pos,"weepingAngel.png")
 		self.timeLapse = 20
 		self.counter = 0
 	def update(self,sights):
 		canattack = True
 		for part in sights:
-			#print part
 			direction = "right"
 			if part.rect.x > self.rect.x:
 				direction = "left"
 			if part == self or part.__class__.__name__== 'WeepingAngel':
 				pass
 			elif part.direction == direction and self.rangeTo(part) < 230:
-				#print part, "observing weeping angel", part, "faced", part.direction, "self faced", self.direction
 				canattack = False
 			else:
-				#print part, "not observing weeping angel", part, "faced", part.direction, "self faced", self.direction
 				pass
-		#print canattack
 		if canattack == True:
 			for part in sights:
 				if part == self or part.__class__.__name__== 'WeepingAngel':
@@ -634,7 +624,7 @@ class WeepingAngel(Moveable):
 
 class Silence(Moveable):
 	def __init__(self,pos):
-		Moveable.__init__(self,pos,"/home/trevor/doctorWhoGame/silence .png")
+		Moveable.__init__(self,pos,"silence .png")
 	def update(self,sights):
 		if random.choice([True,False]):
 			self.move(*self.moveRelative(doctor,1))
@@ -656,11 +646,11 @@ class Silence(Moveable):
 
 class cyberbolt(Moveable):
 	def __init__(self,pos,direction):
-		Moveable.__init__(self,pos,"/home/trevor/doctorWhoGame/cyberbolt.png")
+		Moveable.__init__(self,pos,"cyberbolt.png")
 		self.destructCountDown = 10
 		self.direction = direction
 		self.x = pos
-		self.boom = "/home/trevor/doctorWhoGame/explosion.png"
+		self.boom = "explosion.png"
 		if abs(self.direction[1]) > abs(self.direction[0]):
 			self.image = self.vertical
 			self.rect = self.image.get_rect()
@@ -699,7 +689,7 @@ class cyberbolt(Moveable):
 
 class cyberman(Moveable):
 	def __init__(self,pos):
-		Moveable.__init__(self,pos,"/home/trevor/doctorWhoGame/cyber.png")
+		Moveable.__init__(self,pos,"cyber.png")
 		self.boombolt = None
 		self.life = 300
 	def update(self,others):
@@ -728,7 +718,7 @@ class cyberman(Moveable):
 
 class silencebolt(Moveable):
 	def __init__(self,pos,direction):
-		Moveable.__init__(self,pos,"/home/trevor/doctorWhoGame/silencebolt.png")
+		Moveable.__init__(self,pos,"silencebolt.png")
 		booms.add(self)
 		self.destructCountDown = 10
 		self.direction = direction
@@ -761,7 +751,7 @@ class silencebolt(Moveable):
 
 class silenceorder(Moveable):
 	def __init__(self,pos):
-		Moveable.__init__(self,pos,"/home/trevor/doctorWhoGame/silenceorder.png")
+		Moveable.__init__(self,pos,"silenceorder.png")
 		self.deathbolt = None
 		self.dir = [(2,0),1]
 	def update(self):
@@ -793,83 +783,10 @@ class silenceorder(Moveable):
 				deathbolts.remove(self.deathbolt)
 				daleks.remove(self)
 
-"""
-
-class Companion(Moveable):
-	def __init__(self,pos):
-		Moveable.__init__(self,pos,"/home/trevor/doctorWhoGame/amelia pond.png")
-		self.thingRight = False
-		self.thingLeft = False
-		self.thingDown = False
-		self.thingUp = False
-		self.d = "blegh!"
-	def update(self):
-		for item in pygame.event.get():
-			if item.type == pygame.KEYDOWN and item.key == 275:
-				self.thingRight = True
-				self.d = (5,0)
-			if item.type == pygame.KEYUP and item.key == 275:
-				self.thingRight = False
-			if item.type == pygame.KEYDOWN and item.key == 273:
-				self.thingUp = True
-				self.d = (0,-5)
-			if item.type == pygame.KEYUP and item.key == 273:
-				self.thingUp = False
-			if item.type == pygame.KEYDOWN and item.key == 274:
-				self.thingDown = True
-				self.d = (0,5)
-			if item.type == pygame.KEYUP and item.key == 274:
-				self.thingDown = False
-			if item.type == pygame.KEYDOWN and item.key == 276:
-				self.thingLeft = True
-				self.d = (-5,0)
-			if item.type == pygame.KEYUP and item.key == 276: 
-				self.thingLeft = False
-			if item.type == pygame.KEYDOWN and item.key == 113:
-				raise SystemExit
-			if item.type == pygame.KEYDOWN and item.key == 115:
-				self.sonicKey = True
-			if item.type == pygame.KEYUP and item.key == 115:
-				self.sonicKey = False
-			if item.type == pygame.KEYDOWN and item.key == pygame.K_h:
-				self.healing = True
-			if item.type == pygame.KEYUP and item.key == pygame.K_h:
-                                self.healing = False
-		if self.thingRight == True:
-			self.move(2,0)
-		if self.thingLeft == True:
-			self.move(-2,0)
-		if self.thingUp == True:
-			self.move(0,-2)
-		if self.thingDown == True:
-			self.move(0,2)
-	def checkHealth(self,health,stamina,regen):
-		if health < 0:
-			print "badly injured, get to the tardis"
-                	if stamina < 0:
-                        	print "Game Over--you died"
-                       		raise SystemExit
-                	regenorate =  pygame.sprite.spritecollide(self, tardises, False)
-                        for other in regenorate:
-                               	if other != self:
-                                       	if regen > 70:
-                                               	health = 18
-					else:
-						print "insufficient energy..."
-		collisionsA = pygame.sprite.spritecollide(self, deathbolts, False)
-                for other in collisionsA:
-	                if other != self:
-                        	health = health -3
-		collisionsb = pygame.sprite.spritecollide(self, booms, False)
-		for other in collisionsb:
-			if other != self:
-				health = health -4
-		return health
-"""
 
 class Pond(Moveable):
 	def __init__(self,pos):
-		Moveable.__init__(self,pos,"/home/trevor/doctorWhoGame/amelia pond.png")
+		Moveable.__init__(self,pos,"amelia pond.png")
 		self.sonicWave = None
 	def update(self):
 		if self.rangeTo(doctor) < 200:
@@ -946,7 +863,7 @@ class Pond(Moveable):
 
 class Rory(Moveable):
 	def __init__(self,pos):
-		Moveable.__init__(self,pos,"/home/trevor/doctorWhoGame/rory.png")
+		Moveable.__init__(self,pos,"rory.png")
 		self.counting = 0
 	def update(self):
 		if self.counting > 0:
@@ -1032,7 +949,7 @@ class Rory(Moveable):
 
 class sonicWave(Moveable):
 	def __init__(self,pos,direction):
-		Moveable.__init__(self,pos,"/home/trevor/doctorWhoGame/sonicBolt.png")
+		Moveable.__init__(self,pos,"sonicBolt.png")
 		self.destructCountDown = 45
 		self.direction = direction
 		if abs(self.direction[1]) > abs(self.direction[0]):
@@ -1064,7 +981,7 @@ class sonicWave(Moveable):
 
 class Doctor(Moveable):
 	def __init__(self,pos):
-		Moveable.__init__(self,pos,"/home/trevor/doctorWhoGame/doctor2.png")
+		Moveable.__init__(self,pos,"doctor2.png")
 		self.thingRight = False
 		self.thingLeft = False
 		self.thingDown = False
@@ -1222,7 +1139,7 @@ beamers = pygame.sprite.RenderUpdates()
 #IMPORTANT
 
 if level == '':
-	level = 'standard'
+	level = 'setup1'
 
 if level == "standard":
 	#intro
@@ -1258,7 +1175,7 @@ if level == "standard":
 	#rorys.add(rory)
 	tardis = Tardis((700,700))
 	tardises.add(tardis)
-	levelmsg = "Well done. That was a somewhat chaotic introduction to things. Now, there are several paths you can go along. You can use names as map seed numbers to get random maps, you can say rand1, rand2, and so on to get carefull blends of random and scripted positions for a fun game, you could use setup1 to experience a chain of scripted maps that may be interesting, or you could start a plot using plot1. There may yet be bonus content."
+	levelmsg = "Well done. Soon, there will be more maps. When they do come, you can find new maps along several paths. You could use names as map seed numbers to get random maps, you can say rand1, rand2, and so on to get carefull blends of random and scripted positions for a fun game, you could use setup1, the one you probably played first, to experience a chain of scripted maps that may be interesting. There may yet be bonus content."
 elif level == "insane191030243":
 	pass
 elif level == "rand1":
@@ -1307,7 +1224,7 @@ elif level == "setup1":
 	rorys.add(rory)
 	tardis = Tardis((100,750))
 	tardises.add(tardis)
-	levelmsg = "Well done. The next sequential setup is setup2_989. Though I doubt you will invest this much time in this thing, I may later encorporate some greater form of progression that will grant you a few choices in the doctor's controls and stuff."
+	levelmsg = "Well done. You just completed the coordinates setup1, the standard layout. The next sequential setup will be setup2_989. This is likely to be available in the next update. Type arena for the only other completed setup. Though I doubt you will invest this much time in this thing, I may later encorporate some greater form of progression that will grant you a few choices in the doctor's controls and stuff."
 elif level == "plot1":
 	pass
 else:
@@ -1335,7 +1252,7 @@ def PossibleReconsrtruct():
 
 everything.add(daleks,doctors,barriers,reactors,bombs,weapondaleks,ponds,civilians,speedydaleks,angels,rorys,cybers,silence)
 everything2.add(daleks,doctors,barriers,reactors,bombs,ponds,civilians,speedydaleks,angels,rorys,silence)
-#this group represents things angels will pay attetion to. The order represents their priority. Angels are in the middle of a civil war and will attack eachother.
+#This group represents things angels will pay attetion to. The order represents their priority. Angels will not attack eachother, however. They just pay attention to eachother's observation.
 everything7.add(daleks,weapondaleks,doctors,ponds,civilians,speedydaleks,angels,rorys,cybers)
 foes.add(daleks,weapondaleks,speedydaleks,cybers,silence)
 pygame.display.update(daleks.draw(screen))
@@ -1376,7 +1293,6 @@ while True:
 	angels.update(everything7)
 	cybers.update(everything7)
 	silence.update(everything7)
-	#barriers.update()
 	beamers.update()
 	health = doctor.checkHealth(health,stamina,regen)
 	rtn = doctor.heal(health,regen)
@@ -1443,5 +1359,4 @@ while True:
 					print "YOU WIN!!!"
 					print levelmsg
 					raise SystemExit
-	#tesselector, time rifts and actions through them, pandorica, master, terminals for map control, ptyradactal pests, demons run
-	#multi-graphiced walls, wide gates, teleport beamers, vasta nerada, adipose, torchwood, cyberman, prisoner 0, river song, k9, reptile people, headless monks, face of boe, captian jack, cat people, gas maskers, red waterfall bots, ood, dalek prison, possessors(vasta nerada, dalek asylum, ood pit, tooth and claw, silence), whispermen, trensildor, past companions(heavily armed), tardis interior, mines, order of the silence, saving objects through time rifts, emps, turrets
+	#tesselector, terminals for map control, ptyradactal pests, demons run, wide gates, vasta nerada, adipose, torchwood, prisoner 0, river song, k9, subteranean reptile whatevertheyrecalled, headless monks, face of boe, captian jack, gas maskers, red waterfall bots, ood, dalek prison, dalek asylum nanofeild, tooth and claw, expanded silence, whispermen, past companions, tardis interior, mines, objects through time rifts, emps, turrets
