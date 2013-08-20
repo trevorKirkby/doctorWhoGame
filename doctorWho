@@ -309,7 +309,8 @@ class SpecialWeaponsDalek(Moveable):
 		self.boombolt = None
 		self.life = 300
 	def update(self):
-		self.move(*self.moveRelative(doctor,1))
+		if self.rangeTo(doctor) < 415:
+			self.move(*self.moveRelative(doctor,1))
 		if self.boombolt:
 			if self.boombolt.update() == False:
 				boombolts.remove(self.boombolt)
@@ -1270,8 +1271,8 @@ elif level == "setup1":
 	#NOTE: ALL THAT REMAINS TO BE PLACED IS DALEK AND ENVIRONMENT PLACEMENT
 	#dalek placement
 	speedydaleks.add(SpeedyDalek((320,150)),SpeedyDalek((370,150)))
-	daleks.add(Dalek((0,0)),Dalek((0,0)),Dalek((0,0)),Dalek((0,0)),Dalek((0,0)),silenceorder((700,100)),silenceorder((750,150)),silenceorder((700,100)))
-	weapondaleks.add(SpecialWeaponsDalek((0,0)),SpecialWeaponsDalek((0,0)))
+	daleks.add(Dalek((55,150)),Dalek((105,150)),Dalek((155,150)),Dalek((128,200)),Dalek((340,375)),silenceorder((700,100)),silenceorder((750,150)),silenceorder((700,100)))
+	weapondaleks.add(SpecialWeaponsDalek((78,200)),SpecialWeaponsDalek((290,325)))
 	#silence placement
 	silence.add(Silence((750,50)),Silence((750,100)),Silence((700,50)))
 	#cyber placement
