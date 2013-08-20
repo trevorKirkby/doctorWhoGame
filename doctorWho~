@@ -20,13 +20,14 @@ else:
 	print "okay..."
 	time.sleep(.3)
 
-level = raw_input("enter tardis target phrase: ")
+level = raw_input("enter tardis target phrase (a blank coordinates takes you to a standard scenario, which is a good start, though not any easier than some of the other ones): ")
 
 print "starting up game..."
 
 everything = pygame.sprite.RenderUpdates()
 everything2 = pygame.sprite.RenderUpdates()
 everything7 = pygame.sprite.RenderUpdates()
+foes = pygame.sprite.RenderUpdates()
 deathbolts = pygame.sprite.RenderUpdates()
 boombolts = pygame.sprite.RenderUpdates()
 speedbolts = pygame.sprite.RenderUpdates()
@@ -154,6 +155,10 @@ class Reactor(pygame.sprite.Sprite):
 			for other in collisions:
 				if other != self:
 					self.destruct()
+			collisions = pygame.sprite.spritecollide(self,booms,False)
+			for other in collisions:
+				if other != self:
+					self.destruct()
 		else:
 			if self.countdown > 0:
 				self.countdown = self.countdown - 1
@@ -197,6 +202,10 @@ class Bomb(pygame.sprite.Sprite):
 			for other in collisions:
 				if other != self:
 					self.destruct()
+			collisions = pygame.sprite.spritecollide(self,booms,False)
+			for other in collisions:
+				if other != self:
+					self.destruct()
                         if self.dalekShots == 3:
                                 self.destruct()
                 else:
@@ -237,6 +246,10 @@ class Crate(pygame.sprite.Sprite):
                         for other in collisions:
                                 if other != self:
                                         self.destruct()
+			collisions = pygame.sprite.spritecollide(self,booms,False)
+			for other in collisions:
+				if other != self:
+					self.destruct()
                 else:
                         if self.countdown > 0:
                                 self.countdown = self.countdown - 1
@@ -361,6 +374,7 @@ class Wall(pygame.sprite.Sprite):
 		for other in collisions:
 			if other != self:
 				everything.remove(self)
+				barriers.remove(self)
 
 class StoneWall(pygame.sprite.Sprite):
 	def __init__(self,pos):
@@ -373,6 +387,7 @@ class StoneWall(pygame.sprite.Sprite):
 		for other in collisions:
 			if other != self:
 				everything.remove(self)
+				barriers.remove(self)
 
 class Tardis(pygame.sprite.Sprite):
         def __init__(self,pos):
@@ -457,11 +472,6 @@ class SpeedyDalek(Moveable):
 	def update(self):
 		if self.rangeTo(doctor) < 415:
 			self.move(*self.moveRelative(doctor,2))
-		elif self.rangeTo(pond) < 300:
-			self.move(*self.moveRelative(pond,2))
-		for civilian in civilians:
-			if self.rangeTo(civilian) < 250:
-				self.move(*self.moveRelative(civilian,2))
 		if self.speedbolt:
 			if self.speedbolt.update() == False:
 				speedbolts.remove(self.speedbolt)
@@ -524,7 +534,14 @@ class SpeedBolt(Moveable):
 class Civilian(Moveable):
 	def __init__(self,pos):
 		Moveable.__init__(self,pos,"/home/trevor/doctorWhoGame/civilian.png")
-	def update(self,saved,dead):
+		self.gone = False
+	def update(self,saved1,dead1):
+		if self.gone == None:
+			self.gone = True
+		elif self.gone == True:
+			everything.remove(self)
+			everything7.remove(self)
+			civilians.remove(self)
 		for dalek in daleks:
 			if self.rangeTo(dalek) < 350:
 				self.move(*self.moveRelative(dalek,-2))
@@ -535,36 +552,38 @@ class Civilian(Moveable):
 			if self.rangeTo(barrier) < 5:
 				self.move(*self.moveRelative(barrier,-2))
 		if self.rangeTo(doctor) < 350:
-			self.move(*self.moveRelative(doctor,2))
+			if self.rangeTo(doctor) < 90:
+				self.move(*self.moveRelative(doctor,-2))
+			else:
+				self.move(*self.moveRelative(doctor,2))
 		elif self.rangeTo(pond) < 350:
-			self.move(*self.moveRelative(pond,2))
+			if self.rangeTo(pond) < 90:
+				self.move(*self.moveRelative(pond,-2))
+			else:
+				self.move(*self.moveRelative(pond,2))
 		for tardis in tardises:
+			if self.rangeTo(tardis) < 150:
+				self.move(*self.moveRelative(tardis,2))
 			if self.rangeTo(tardis) < 50:
-				saved = saved + 1
-				everything.remove(self)
-				everything7.remove(self)
-				civilians.remove(self)
-				#print saved, "saved"
+				self.gone = True
+				saved1 = saved1 + 1
+				print saved1, "saved"
+				return [saved1,dead1]
 		collisions = pygame.sprite.spritecollide(self, booms, False)
 		for other in collisions:
 			if other != self:
-				everything.remove(self)
-				everything7.remove(self)
-				civilians.remove(self)
-				dead = dead + 1
-				#print dead
+				self.gone = True
+				dead1 = dead1 + 1
+				print dead1, "dead"
+				return [saved1,dead1]
 		collisions = pygame.sprite.spritecollide(self, deathbolts, False)
 		for other in collisions:
 			if other != self:
-				everything.remove(self)
-				everything7.remove(self)
-				civilians.remove(self)
-				dead = dead + 1
-				#print dead
-		#print saved, dead
-		rtn2 = [saved,dead]
-		#print rtn2
-		return rtn2
+				self.gone = True
+				dead1 = dead1 + 1
+				print dead1, "dead"
+				return  [saved1,dead1]
+		return [saved,dead]
 
 class WeepingAngel(Moveable):
 	def __init__(self,pos):
@@ -574,19 +593,24 @@ class WeepingAngel(Moveable):
 	def update(self,sights):
 		canattack = True
 		for part in sights:
+			#print part
 			direction = "right"
+			if part.rect.x > self.rect.x:
+				direction = "left"
 			if part == self or part.__class__.__name__== 'WeepingAngel':
 				pass
-			elif part.rect.x > self.rect.x:
-				direction = "left"
-			elif part.direction == direction and self.rangeTo(part) < 150:
+			elif part.direction == direction and self.rangeTo(part) < 230:
 				#print part, "observing weeping angel", part, "faced", part.direction, "self faced", self.direction
 				canattack = False
+			else:
+				#print part, "not observing weeping angel", part, "faced", part.direction, "self faced", self.direction
+				pass
+		#print canattack
 		if canattack == True:
 			for part in sights:
 				if part == self or part.__class__.__name__== 'WeepingAngel':
 					pass
-				elif self.rangeTo(part) < 150:
+				elif self.rangeTo(part) < 230:
 					self.attacking(part)
 					break
 		if self.counter > 0:
@@ -596,16 +620,12 @@ class WeepingAngel(Moveable):
 	def attacking(self,target):
 		if self.timeLapse < 0:
 			booms.add(self)
-			self.move(*self.moveRelative(target,7))
-			self.move(*self.moveRelative(target,7))
-			self.move(*self.moveRelative(target,7))
-			self.move(*self.moveRelative(target,7))
-			self.move(*self.moveRelative(target,7))
-			self.move(*self.moveRelative(target,7))
-			self.move(*self.moveRelative(target,7))
-			self.move(*self.moveRelative(target,7))
-			self.move(*self.moveRelative(target,7))
-			self.move(*self.moveRelative(target,7))
+			self.move(*self.moveRelative(target,15))
+			self.move(*self.moveRelative(target,15))
+			self.move(*self.moveRelative(target,15))
+			self.move(*self.moveRelative(target,15))
+			self.move(*self.moveRelative(target,15))
+			self.move(*self.moveRelative(target,15))
 			self.timeLapse = 20
 			self.counter = 5 
 		else:
@@ -618,7 +638,7 @@ class Silence(Moveable):
 		if random.choice([True,False]):
 			self.move(*self.moveRelative(doctor,1))
 		for part in sights:
-			if part == self:
+			if part == self or part == doctor:
 				continue
 			if self.rangeTo(part) < 100:
 				part.move(*part.moveRelative(doctor,2))
@@ -851,8 +871,11 @@ class Pond(Moveable):
 		Moveable.__init__(self,pos,"/home/trevor/doctorWhoGame/amelia pond.png")
 		self.sonicWave = None
 	def update(self):
-		if self.rangeTo(doctor) < 375:
-			self.move(*self.moveRelative(doctor,2))
+		if self.rangeTo(doctor) < 200:
+			if self.rangeTo(doctor) < 90:
+				self.move(*self.moveRelative(doctor,-2))
+			else:
+				self.move(*self.moveRelative(doctor,2))
 		else:
 			for dalek in daleks:
 				if self.rangeTo(dalek) < 375:
@@ -863,17 +886,20 @@ class Pond(Moveable):
 			for weapondalek in weapondaleks:
 				if self.rangeTo(weapondalek) < 375:
 					self.move(*self.moveRelative(weapondalek,-2))
+			for angel in angels:
+				if self.rangeTo(angel) < 375:
+					self.move(*self.moveRelative(angel,-2))
+		if self.sonicWave:
+			if self.sonicWave.update() == False:
+				sonics.remove(self.sonicWave)
+				self.sonicWave = None
 		for bomb in bombs:
 			if self.rangeTo(bomb) > 90 and self.rangeTo(bomb) < 300:
-				if self.sonicWave:
-					if self.sonicWave.update() == False:
-						sonics.remove(self.sonicWave)
-						self.sonicWave = None
-					else:
-						print "SONIC"
-						direction = self.moveRelative(bomb,6)
-						self.sonicWave = sonicWave(self.rect.center,direction)
-						sonics.add(self.sonicWave)
+				if self.sonicWave == None:
+					print "SONIC"
+					direction = self.moveRelative(bomb,6)
+					self.sonicWave = sonicWave(self.rect.center,direction)
+					sonics.add(self.sonicWave)
 		for boom in booms:
 			if self.rangeTo(boom) < 30:
 				self.move(*self.moveRelative(boom,-6))
@@ -916,8 +942,6 @@ class Pond(Moveable):
 				sonics.remove(self.sonicWave)
 				print "Game Over --Amelia Pond died"
 				raise SystemExit
-		for angel in angels:
-			self.move(*self.moveRelative(angel,1))
 
 class Rory(Moveable):
 	def __init__(self,pos):
@@ -929,30 +953,41 @@ class Rory(Moveable):
 			if self.counting == 0:
 				booms.remove(self)
 		if self.rangeTo(doctor) < 375:
-			self.move(*self.moveRelative(doctor,2))
+			if self.rangeTo(doctor) < 90:
+				self.move(*self.moveRelative(doctor,-2))
+			else:
+				self.move(*self.moveRelative(doctor,2))
 		else:
 			for dalek in daleks:
-				if self.rangeTo(dalek) < 70:
-					print "charge!"
-					self.move(*self.moveRelative(dalek,5))
-					booms.add(self)
-					self.counting = 5
-				elif self.rangeTo(dalek) < 400:
+				if self.rangeTo(dalek) < 400:
 					self.move(*self.moveRelative(dalek,-2))
 			for dalek in cybers:
-				if self.rangeTo(dalek) < 100:
-					print "charge!"
-					self.move(*self.moveRelative(dalek,5))
-					booms.add(self)
-					self.counting = 5
-				elif self.rangeTo(dalek) < 375:
+				if self.rangeTo(dalek) < 375:
 					self.move(*self.moveRelative(dalek,-2))
 			for speedydalek in speedydaleks:
 				if self.rangeTo(speedydalek) < 375:
 					self.move(*self.moveRelative(speedydalek,-1))
 			for weapondalek in weapondaleks:
 				if self.rangeTo(weapondalek) < 375:
-					self.move(*self.moveRelative(weapondalek,-3))
+					self.move(*self.moveRelative(weapondalek,-1))
+			for angel in angels:
+				if self.rangeTo(angel) < 375:
+					self.move(*self.moveRelative(angel,-1))
+		for dalek in daleks:
+			if self.rangeTo(dalek) < 100:
+				self.move(*self.moveRelative(dalek,7))
+				booms.add(self)
+				self.counting = 5
+		for dalek in cybers:
+			if self.rangeTo(dalek) < 100:
+				self.move(*self.moveRelative(dalek,7))
+				booms.add(self)
+				self.counting = 5
+		for dalek in silence:
+			if self.rangeTo(dalek) < 200:
+				self.move(*self.moveRelative(dalek,7))
+				booms.add(self)
+				self.counting = 5
 		for boom in booms:
 			if self.rangeTo(boom) < 70:
 				self.move(*self.moveRelative(boom,-6))
@@ -993,8 +1028,6 @@ class Rory(Moveable):
 				ponds.remove(self)
 				print "Game Over --Rory died"
 				raise SystemExit
-		for angel in angels:
-			self.move(*self.moveRelative(angel,1))
 
 class sonicWave(Moveable):
 	def __init__(self,pos,direction):
@@ -1043,7 +1076,7 @@ class Doctor(Moveable):
 		self.exploding = False
 		self.counter = 0
 		self.counter2 = 0
-		self.energy = 60
+		self.energy = 300
 		self.bolt = None
 	def update(self):
 		for item in pygame.event.get():
@@ -1080,7 +1113,7 @@ class Doctor(Moveable):
 			if item.type == pygame.KEYDOWN and item.key == pygame.K_f:
 				if self.energy == 60:
 					self.sprinting = True
-					self.counter2 = 20
+					self.counter2 = 40
 			if item.type == pygame.KEYUP and item.key == pygame.K_f:
                                 self.sprinting = False
 		if self.thingRight == True:
@@ -1103,8 +1136,8 @@ class Doctor(Moveable):
 				if self.thingDown == True:
 					self.move(0,2)
 			else:
-				self.energy = 0
-		if self.energy < 60:
+				self.energy -= 60
+		if self.energy < 300:
 			self.energy += 1
 	def checkHealth(self,health,stamina,regen):
 		if health < 0:
@@ -1118,6 +1151,8 @@ class Doctor(Moveable):
                                	if other != self:
                                        	if regen > 70:
                                                	health = 15
+						stamina = 350
+						regen -= 100
 					else:
 						print "insufficient energy... Your pretty much screwed. These tricks can't always save you."
 		collisionsA = pygame.sprite.spritecollide(self, deathbolts, False)
@@ -1222,35 +1257,44 @@ if level == "standard":
 	#rorys.add(rory)
 	tardis = Tardis((700,700))
 	tardises.add(tardis)
-elif level == "insane":
+	levelmsg = "Well done. That was a somewhat chaotic introduction to things. Now, there are several paths you can go along. You can use names as map seed numbers to get random maps, you can say rand1, rand2, and so on to get carefull blends of random and scripted positions for a fun game, you could use setup1 to experience a chain of scripted maps that may be interesting, or you could start a plot using plot1. There may yet be bonus content."
+elif level == "insane191030243":
 	pass
 elif level == "rand1":
 	pass
 elif level == "setup1":
 	#NEW SETUP ------------------------------------- NEW SETUP ---------------------------------------- NEW SETUP
+	#time rifts: note: to units, rifts will suck them in and kill them, even angels. angels can also be killed by two simultaneous explosions. to other things, like sonics, death rays, and heal rays, it will transport them a certain amount into the future, by a number seen on the rift. This gives a mirror and delay. And, ofcoarse, a rift could possibly have certain times it is present or not, and a unit will keep it to occupied to suck in other units for a few seconds. There is such a thing as a rift explosion, which is a larger, short lived time rift. Regenoration blasts will heal allies, push all enemies, have roughly a fifty percent chance of destroying a wall it passes through, and could possibly explode which would kill enemies, could possibly cause a small rift explosion, or could possibly kill an enemy. It will also, of coarse, have a chance of just pushing them. This depends partly upon the enemy, partly upon randomness, and partly upon later progression. They can also supressively implode volatile map components.
 	#intro
 	print "This setup includes a dalek outpost with captive civilians, an attacking force of silence, a lone cyberman pursuer, and a large amount of weeping angels in an abandoned mine. Good luck..."
+	#NOTE: ALL THAT REMAINS TO BE PLACED IS DALEK AND ENVIRONMENT PLACEMENT
 	#dalek placement
-	speedydaleks.add(SpeedyDalek((0,0)),SpeedyDalek((0,0)))
-	daleks.add(Dalek((0,0)),Dalek((0,0)),Dalek((0,0)),Dalek((0,0)),Dalek((0,0)),silenceorder((0,0)),silenceorder((0,0)),silenceorder((0,0)),silenceorder((0,0)))
+	speedydaleks.add(SpeedyDalek((320,150)),SpeedyDalek((370,150)))
+	daleks.add(Dalek((0,0)),Dalek((0,0)),Dalek((0,0)),Dalek((0,0)),Dalek((0,0)),silenceorder((700,100)),silenceorder((750,150)),silenceorder((700,100)))
 	weapondaleks.add(SpecialWeaponsDalek((0,0)),SpecialWeaponsDalek((0,0)))
 	#silence placement
-	silence.add(Silence((0,0)),Silence((0,0)),Silence((0,0)))
+	silence.add(Silence((750,50)),Silence((750,100)),Silence((700,50)))
 	#cyber placement
-	cybers.add(cyberman((300,600)))
+	cybers.add(cyberman((375,600)))
 	#civilian placement
-	civilians.add(Civilian((0,0)),Civilian((0,0)),Civilian((0,0)),Civilian((0,0)),Civilian((0,0)),Civilian((0,0)))
+	civilians.add(Civilian((540,40)),Civilian((540,90)),Civilian((650,50)),Civilian((750,200)),Civilian((100,600)),Civilian((50,600)))
 	#environment placement
-	crates.add(Crate((0,0)),Crate((0,0)))
-	reactors.add(Reactor((0,0)),Reactor((0,0)),Reactor((0,0)))
-	bombs.add(Bomb((0,0)),Bomb((0,0)),Bomb((0,0)))
-	ventGates.add(VentGate((0,0)),VentGate((0,0)),VentGate((0,0)),VentGate((0,0)))
-	beamers.add(Beamer((150,150),(200,200)))
+	crates.add(Crate((320,100)),Crate((370,100)))
+	reactors.add(Reactor((125,385)),Reactor((370,340)),Reactor((370,390)))
+	bombs.add(Bomb((55,100)),Bomb((105,100)),Bomb((155,100)))
+	bombs.add(Bomb((475,240)),Bomb((525,240)))
+	ventGates.add(VentGate((210,190)))
+	beamers.add(Beamer((160,325),(100,0)))
 	#angel placement
 	angels.add(WeepingAngel((610,610)),WeepingAngel((580,580)),WeepingAngel((610,640)),WeepingAngel((580,640)),WeepingAngel((640,580)))
-	#specific level
-	barriers.add(Wall((0,0)),Wall((0,0)),Wall((0,0)),Wall((0,0)),Wall((0,0)))
-	barriers.add(Wall((0,0)),Wall((0,0)),Wall((0,0)),Wall((0,0)),Wall((0,0)),Wall((0,0)),Wall((0,0)),Wall((0,0)),Wall((0,0)),Wall((0,0)),Wall((0,0)))
+	#outpost outer wall
+	barriers.add(Wall((420,40)),Wall((420,90)),Wall((420,140)),Wall((420,190)),Wall((420,240)))
+	barriers.add(Wall((420,290)),Wall((420,340)),Wall((420,390)),Wall((420,440)),Wall((370,440)),Wall((320,440)),Wall((270,440)),Wall((220,440)),Wall((170,440)),Wall((120,440)),Wall((70,440)),Wall((20,440)))
+	#outpost interior rooms
+	barriers.add(Wall((210,40)),Wall((210,90)),Wall((210,140)),Wall((210,240)),Wall((210,290)),Wall((210,340)),Wall((210,390)),Wall((210,440)))
+	barriers.add(Wall((260,240)),Wall((310,240)),Wall((360,240)),Wall((410,240)),Wall((420,240)))
+	#outpost prison
+	barriers.add(Wall((490,40)),Wall((490,90)),Wall((490,140)),Wall((490,190)),Wall((540,190)),Wall((590,190)),Wall((590,140)),Wall((590,90)),Wall((590,40)))
 	#stone mine
 	barriers.add(StoneWall((700,700)),StoneWall((640,700)),StoneWall((580,700)),StoneWall((520,700)),StoneWall((520,640)),StoneWall((520,580)),StoneWall((520,520)),StoneWall((580,520)),StoneWall((640,520)),StoneWall((700,520)),StoneWall((700,580)),StoneWall((700,640)))
 	#doctor, pond, rory, and tardis placement
@@ -1262,6 +1306,7 @@ elif level == "setup1":
 	rorys.add(rory)
 	tardis = Tardis((100,750))
 	tardises.add(tardis)
+	levelmsg = "Well done. The next sequential setup is setup2_989. Though I doubt you will invest this much time in this thing, I may later encorporate some greater form of progression that will grant you a few choices in the doctor's controls and stuff."
 elif level == "plot1":
 	pass
 else:
@@ -1291,6 +1336,7 @@ everything.add(daleks,doctors,barriers,reactors,bombs,weapondaleks,ponds,civilia
 everything2.add(daleks,doctors,barriers,reactors,bombs,ponds,civilians,speedydaleks,angels,rorys,silence)
 #this group represents things angels will pay attetion to. The order represents their priority. Angels are in the middle of a civil war and will attack eachother.
 everything7.add(daleks,weapondaleks,doctors,ponds,civilians,speedydaleks,angels,rorys,cybers)
+foes.add(daleks,weapondaleks,speedydaleks,cybers,silence)
 pygame.display.update(daleks.draw(screen))
 pygame.display.update(doctors.draw(screen))
 pygame.display.update(barriers.draw(screen))
@@ -1317,15 +1363,19 @@ while True:
 		rory.update()
 	except NameError, e:
 		pass
-	rtn2 = civilians.update(saved, dead)
-#	saved = rtn2[0]
-#	dead = rtn2[1]
+	for civilian in civilians:
+		rtn2 = civilian.update(saved, dead)
+		if rtn2 != None:
+			saved = rtn2[0]
+			dead = rtn2[1]
+		else:
+			pass
 	doctor.update()
 	doctor.sonicDoor()
 	angels.update(everything7)
 	cybers.update(everything7)
 	silence.update(everything7)
-	barriers.update()
+	#barriers.update()
 	beamers.update()
 	health = doctor.checkHealth(health,stamina,regen)
 	rtn = doctor.heal(health,regen)
@@ -1333,12 +1383,6 @@ while True:
 	regen = rtn[1]
 	if health < 0:
 		stamina = stamina - 1
-		echoHealth = True
-	if echoHealth == True:
-		if health > 0:
-			regen = regen - 100
-			stamina = 350
-			echohealth = False
 	time.sleep(0.04)
 	if regen < 900:
 		regen = regen + .4
@@ -1361,6 +1405,12 @@ while True:
 	pygame.display.update(silence.draw((screen)))
 	pygame.display.update(beamers.draw((screen)))
 	PossibleReconsrtruct()
+	for boom in booms:
+		collisionsA = pygame.sprite.spritecollide(boom, barriers, False)
+                for other in collisionsA:
+	                if other != boom:
+				everything.remove(other)
+				barriers.remove(other)
 	for VentGate in ventGates:
 		VentGate.openedClosed()
 	for reactor in reactors:
@@ -1379,12 +1429,18 @@ while True:
 		detonation = boombolt.PossibleExplode()
 		if detonation == True:
 			pygame.display.update(boombolts.draw(screen))
-	if random.choice(range(300)) == 7:
+	if random.choice(range(200)) == 7:
 		print 'saved', saved, 'dead', dead, 'health', health, 'regenoration energy', regen
-	if dead == 6:
-		print "Game Over, excessive deaths of civilians"
+	if dead == 12:
+		print "Game Over, excessive deaths of civilians. You shouldn't let twelve civilians get slaughtered like that. You must be almost trying to kill them. Seriously..."
 		raise SystemExit
-	if saved == 5:
-		print "WELL DONE! YOU JUST SAVED 5 CIVILIANS"
+	if saved >= 4 or dead < 8:
+		if len(foes) == 0:
+			endcollisions = pygame.sprite.spritecollide(doctor, tardises, False)
+			for other in endcollisions:
+				if other != doctor:
+					print "YOU WIN!!!"
+					print levelmsg
+					raise SystemExit
 	#tesselector, time rifts and actions through them, pandorica, master, terminals for map control, ptyradactal pests, demons run
 	#multi-graphiced walls, wide gates, teleport beamers, vasta nerada, adipose, torchwood, cyberman, prisoner 0, river song, k9, reptile people, headless monks, face of boe, captian jack, cat people, gas maskers, red waterfall bots, ood, dalek prison, possessors(vasta nerada, dalek asylum, ood pit, tooth and claw, silence), whispermen, trensildor, past companions(heavily armed), tardis interior, mines, order of the silence, saving objects through time rifts, emps, turrets
