@@ -978,6 +978,115 @@ class sonicWave(Moveable):
 					other.move(*other.moveRelative(doctor,-2))
 			return True
 
+class returner():
+	def __init__(thing):
+		pass
+	def update(thing):
+		return True
+
+class regenbolt(Moveable):
+	def __init__(self,pos,direction):
+		Moveable.__init__(self,pos,"regenbolt.png")
+		self.destructCountDown = 100
+		self.direction = direction
+		if abs(self.direction[1]) > abs(self.direction[0]):
+			self.image = self.vertical
+			self.rect = self.image.get_rect()
+			self.rect.center = pos
+	def update(self):
+		screen.fill((150,150,200),self.rect)
+		self.destructCountDown = self.destructCountDown - 1
+		if self.destructCountDown == 0:
+			return False
+		else:
+			self.rect.move_ip(*self.direction)
+			self.rect.move_ip(*self.direction)
+			self.rect.move_ip(*self.direction)
+			self.rect.move_ip(*self.direction)
+			self.rect.move_ip(*self.direction)
+			self.rect.move_ip(*self.direction)
+			self.rect.move_ip(*self.direction)
+			self.rect.move_ip(*self.direction)
+			randomizer = random.choice(range(10))
+			collisions = pygame.sprite.spritecollide(self, everything, False)
+			for other in collisions:
+				if other != self:
+					if randomizer == 7:
+						self.destruct()
+			collisions = pygame.sprite.spritecollide(self, daleks, False)
+			for other in collisions:
+				if other != self:
+					if randomizer > 4:
+						other.move(*other.moveRelative(doctor,-8))
+					elif randomizer < 4:
+						print "EMP"
+						daleks.remove(other)
+						everything7.remove(other)
+					else:
+						print "WEAPONS DISABLED"
+						deathbolts.remove(other.deathbolt)
+						other.deathbolt = returner()
+			collisions = pygame.sprite.spritecollide(self, weapondaleks, False)
+			for other in collisions:
+				if other != self:
+					other.move(*other.moveRelative(doctor,-8))
+			collisions = pygame.sprite.spritecollide(self, speedydaleks, False)
+			for other in collisions:
+				if other != self:
+					other.move(*other.moveRelative(doctor,-8))
+			collisions = pygame.sprite.spritecollide(self, cybers, False)
+			for other in collisions:
+				if other != self:
+					other.move(*other.moveRelative(doctor,-8))
+			collisions = pygame.sprite.spritecollide(self, angels, False)
+			for other in collisions:
+				if other != self:
+					other.move(*other.moveRelative(doctor,-8))
+			collisions = pygame.sprite.spritecollide(self, silence, False)
+			for other in collisions:
+				if other != self:
+					other.move(*other.moveRelative(doctor,-8))
+			collisions = pygame.sprite.spritecollide(self, reactors, False)
+			for other in collisions:
+				if other != self:
+					reactors.remove(other)
+			collisions = pygame.sprite.spritecollide(self, bombs, False)
+			for other in collisions:
+				if other != self:
+					other.destruct()
+			collisions = pygame.sprite.spritecollide(self, crates, False)
+			for other in collisions:
+				if other != self:
+					pygame.move_ip(other,self.direction)
+					pygame.move_ip(other,self.direction)
+					pygame.move_ip(other,self.direction)
+					pygame.move_ip(other,self.direction)
+					pygame.move_ip(other,self.direction)
+					pygame.move_ip(other,self.direction)
+					pygame.move_ip(other,self.direction)
+					pygame.move_ip(other,self.direction)
+			collisions = pygame.sprite.spritecollide(self, ventGates, False)
+			for other in collisions:
+				if other != self:
+					thing = other.rect.center
+					other = Beamer(thing,(100,100))
+			collisions = pygame.sprite.spritecollide(self, beamers, False)
+			for other in collisions:
+				if other != self:
+					pass
+			collisions = pygame.sprite.spritecollide(self, barriers, False)
+			for other in collisions:
+				if other != self:
+					everything.remove(other)
+					barriers.remove(other)
+			collisions = pygame.sprite.spritecollide(self, civilians, False)
+			for other in collisions:
+				if other != self:
+					other.move(*other.moveRelative(doctor,8))
+			return True
+	def destruct(self):
+		print "TIME RIFT"
+
 
 class Doctor(Moveable):
 	def __init__(self,pos):
@@ -987,6 +1096,7 @@ class Doctor(Moveable):
 		self.thingDown = False
 		self.thingUp = False
 		self.sonicKey = False
+		self.regenbolt = False
 		self.d = "blegh!"
 		self.sonicWave = None
 		self.healing = False
@@ -996,6 +1106,7 @@ class Doctor(Moveable):
 		self.counter2 = 0
 		self.energy = 300
 		self.bolt = None
+		self.rbolt = None
 	def update(self):
 		for item in pygame.event.get():
 			if item.type == pygame.KEYDOWN and item.key == 275:
@@ -1034,6 +1145,10 @@ class Doctor(Moveable):
 					self.counter2 = 40
 			if item.type == pygame.KEYUP and item.key == pygame.K_f:
                                 self.sprinting = False
+			if item.type == pygame.KEYDOWN and item.key == pygame.K_r:
+				self.regenbolt = True
+			if item.type == pygame.KEYUP and item.key == pygame.K_r:
+				self.regenbolt = False
 		if self.thingRight == True:
 			self.move(2,0)
 		if self.thingLeft == True:
@@ -1101,7 +1216,8 @@ class Doctor(Moveable):
 			else:
 				print "you are uninjured"
 		return rtn
-	def sonicDoor(self):
+	def sonicDoor(self,regen):
+		#print regen
 		if self.sonicWave:
 			if self.sonicWave.update() == False:
 				sonics.remove(self.sonicWave)
@@ -1110,6 +1226,16 @@ class Doctor(Moveable):
 			direction = self.d
 			self.sonicWave = sonicWave(self.rect.center,direction)
 			sonics.add(self.sonicWave)
+		if self.rbolt:
+			if self.rbolt.update() == False:
+				sonics.remove(self.rbolt)
+				self.rbolt = None
+		elif self.regenbolt == True and regen > 700:
+			direction = self.d
+			self.rbolt = regenbolt(self.rect.center,direction)
+			sonics.add(self.rbolt)
+			regen -= 700
+		return regen
 pygame.init()
 screen = pygame.display.set_mode((800,800))
 screen.fill((150,150,200))
@@ -1289,7 +1415,7 @@ while True:
 		else:
 			pass
 	doctor.update()
-	doctor.sonicDoor()
+	regen = doctor.sonicDoor(regen)
 	angels.update(everything7)
 	cybers.update(everything7)
 	silence.update(everything7)
@@ -1302,7 +1428,7 @@ while True:
 		stamina = stamina - 1
 	time.sleep(0.04)
 	if regen < 900:
-		regen = regen + .4
+		regen = regen + 50
 	pygame.display.update(daleks.draw(screen))
 	pygame.display.update(doctors.draw(screen))
 	pygame.display.update(deathbolts.draw(screen))
