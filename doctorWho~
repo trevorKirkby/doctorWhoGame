@@ -33,6 +33,7 @@ boombolts = pygame.sprite.RenderUpdates()
 speedbolts = pygame.sprite.RenderUpdates()
 sonics = pygame.sprite.RenderUpdates()
 booms = pygame.sprite.RenderUpdates()
+damagers = pygame.sprite.RenderUpdates()
 health = 15
 regen = 30
 stamina = 350
@@ -112,6 +113,98 @@ class Moveable(pygame.sprite.Sprite):
 		dx = other.rect.x - self.rect.x
 		dy = other.rect.y - self.rect.y
 		return math.sqrt(dx*dx + dy*dy)
+
+class Unit(Moveable):
+	def __init__(self,pos,image,health):
+		Moveable.__init__(self,pos,image)
+		self.projectile = None
+		self.health = health
+	def maintain(self):
+		if self.projectile:
+			if self.projectile.update() == False:
+				projectiles.remove(self.projectile)
+				self.projectile = None
+		collisions = pygame.sprite.spritecollide(self, damagers, False)
+		for other in collisions:
+			if other != self:
+				try:
+					self.health -= other.damage
+				except AttributeError:
+					print "Error: Unit Damage Collisions:", other, "In damagers group with no attribute self.damage"
+		if self.health <= 0:
+			self.end()
+	def project(self,bolt,speed=6,direction=None,target=None,accuracy=None):
+		direction = self.moveRelative(doctor,speed)
+		self.projectile = bolt(self.rect.center,direction)
+		projectiles.add(self.projectile)
+	def end(self):
+		everything.remove(self)
+		self.projectile.end()
+		self.team.remove(self)
+
+class Projectile(Moveable):
+	#eventually enable diagonal projectile imaging
+	def __init__(self,pos,direction,image,destructcount,parent=None):
+		Moveable.__init__(self,pos,image)
+		self.destructCountDown = destructcount
+		self.direction = direction
+		self.x = pos
+		self.parent = parent
+		self.explodable = False
+		if abs(self.direction[1]) > abs(self.direction[0]):
+			self.image = self.vertical
+			self.rect = self.image.get_rect()
+			self.rect.center = pos
+	def update(self):
+		screen.fill((150,150,200),self.rect)
+		self.destructCountDown = self.destructCountDown - 1
+		if self.destructCountDown == 0:
+			return False
+		else:
+			if self.explodedable == True:
+				if self.exploded == False:
+					self.rect.move_ip(*self.direction)
+			else:
+				self.rect.move_ip(*self.direction)
+			return True
+
+class Explodable():
+	def __init__(self,image,count,damage,triggers=[sonics,damagers]):
+		self.explodable = True
+		self.exploded = False
+		self.explosion = image
+		self.countdown = count
+		self.x = self.rect.center
+		self.shots = 0
+		self.damage = damage
+		self.triggers = triggers
+	def destruct(self):
+		screen.fill((150,150,200),self.rect)
+                self.image = self.explosion
+                self.rect = self.image.get_rect()
+                self.rect.center = self.x
+                everything.remove(self)
+                damagers.add(self)
+		self.exploded = True
+	def update(self):
+		if self.exploded == False:
+			for group in triggers:
+                        	collisions = pygame.sprite.spritecollide(self, group, False)
+                        	for other in collisions:
+                                	if other != self:
+                                	        self.destruct()
+		else:
+			if self.countdown > 0:
+				self.countdown = self.countdown - 1
+			if self.countdown == 0:
+				booms.remove(self)
+				screen.fill((150,150,200),self.rect)
+				reactors.remove(self)
+		return self.exploded
+
+class Team():
+	def __init__():
+		pass
 
 class Reactor(pygame.sprite.Sprite):
 	def __init__(self,pos):
@@ -1057,14 +1150,7 @@ class regenbolt(Moveable):
 			collisions = pygame.sprite.spritecollide(self, crates, False)
 			for other in collisions:
 				if other != self:
-					pygame.move_ip(other,self.direction)
-					pygame.move_ip(other,self.direction)
-					pygame.move_ip(other,self.direction)
-					pygame.move_ip(other,self.direction)
-					pygame.move_ip(other,self.direction)
-					pygame.move_ip(other,self.direction)
-					pygame.move_ip(other,self.direction)
-					pygame.move_ip(other,self.direction)
+					other.destruct()
 			collisions = pygame.sprite.spritecollide(self, ventGates, False)
 			for other in collisions:
 				if other != self:
