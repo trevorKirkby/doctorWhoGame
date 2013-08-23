@@ -34,6 +34,7 @@ speedbolts = pygame.sprite.RenderUpdates()
 sonics = pygame.sprite.RenderUpdates()
 booms = pygame.sprite.RenderUpdates()
 damagers = pygame.sprite.RenderUpdates()
+projectiles = pygame.sprite.RenderUpdates()
 health = 15
 regen = 30
 stamina = 350
@@ -151,22 +152,26 @@ class Projectile(Moveable):
 		self.x = pos
 		self.parent = parent
 		self.explodable = False
+		self.delay = 0
 		if abs(self.direction[1]) > abs(self.direction[0]):
 			self.image = self.vertical
 			self.rect = self.image.get_rect()
 			self.rect.center = pos
 	def update(self):
-		screen.fill((150,150,200),self.rect)
-		self.destructCountDown = self.destructCountDown - 1
-		if self.destructCountDown == 0:
-			return False
+		if self.delay > 0:
+			self.delay -= 1
 		else:
-			if self.explodedable == True:
-				if self.exploded == False:
-					self.rect.move_ip(*self.direction)
+			screen.fill((150,150,200),self.rect)
+			self.destructCountDown = self.destructCountDown - 1
+			if self.destructCountDown == 0:
+				return False
 			else:
-				self.rect.move_ip(*self.direction)
-			return True
+				if self.explodedable == True:
+					if self.exploded == False:
+						self.rect.move_ip(*self.direction)
+				else:
+					self.rect.move_ip(*self.direction)
+				return True
 
 class Explodable():
 	def __init__(self,image,count,damage,triggers=[sonics,damagers]):
@@ -178,6 +183,7 @@ class Explodable():
 		self.shots = 0
 		self.damage = damage
 		self.triggers = triggers
+		self.impermeable = True
 	def destruct(self):
 		screen.fill((150,150,200),self.rect)
                 self.image = self.explosion
@@ -197,10 +203,22 @@ class Explodable():
 			if self.countdown > 0:
 				self.countdown = self.countdown - 1
 			if self.countdown == 0:
-				booms.remove(self)
+				damagers.remove(self)
 				screen.fill((150,150,200),self.rect)
-				reactors.remove(self)
+				self.end()
 		return self.exploded
+
+#MIX-INS
+#MIX-INS
+#MIX-INS
+#MIX-INS
+#MIX-INS
+
+class Detonatable(pygame.sprite.Sprite):
+	def __init__(self,pos):
+		pygame.sprite.Sprite.__init__(self):
+		self.rect = self.image.get_rect()
+		self.rect.center = pos
 
 class doctorteam():
 	def __init__():
@@ -222,6 +240,7 @@ class Reactor(pygame.sprite.Sprite):
 		self.dalekShots = 0
 		self.exploded = False
 		self.countdown = 6
+		self.impermeable = True
 	def destruct(self):
 		screen.fill((150,150,200),self.rect)
                 self.image = self.boom
@@ -308,6 +327,33 @@ class Bomb(pygame.sprite.Sprite):
                                 bombs.remove(self)
                 return self.exploded
 
+class TimeRift(pygame.sprite.Sprite):
+        def __init__(self,pos,count,life):
+                pygame.sprite.Sprite.__init__(self)
+                self.image = pygame.image.load("TimeRift.png").convert_alpha()
+                self.rect = self.image.get_rect()
+                self.x = pos
+                self.rect.center = pos
+                self.countdown = life
+		self.count = count
+		booms.add(self)
+        def update(self,others):
+		for unit in others:
+			if self.rangeTo(unit) < 120:
+				unit.move(*moveRelativeTo(self,4))
+		collisions = pygame.sprite.spritecollide(self, projectiles, False)
+                for other in collisions:
+	                if other != self:
+                         	x,y = projectile.direction
+				projectile.direction = (x*-1,y*-1)
+				projectile.delay = count
+                if self.countdown > 0:
+	                self.countdown = self.countdown - 1
+                else:
+                     	booms.remove(self)
+                        screen.fill((150,150,200),self.rect)
+                        rifts.remove(self)
+
 class Crate(pygame.sprite.Sprite):
         def __init__(self,pos):
                 pygame.sprite.Sprite.__init__(self)
@@ -392,6 +438,10 @@ class BoomBolt(Moveable):
 			if self.exploded == False:
 				self.rect.move_ip(*self.direction)
 				self.rect.move_ip(*self.direction)
+			collisions = pygame.sprite.spritecollide(self, barriers, False)
+			for other in collisions:
+				if other != self and other.impermeable == True:
+					self.destructCountDown = 1
 			return True
 
 class SpecialWeaponsDalek(Moveable):
@@ -399,17 +449,54 @@ class SpecialWeaponsDalek(Moveable):
 		Moveable.__init__(self,pos,"specialWeaponsDalek.png")
 		self.boombolt = None
 		self.life = 300
+		self.insane = False
+		self.spinny = False
+		self.spin = [1,0]
+		self.spincount = 0
+		self.spincount2 = 0
 	def update(self):
-		if self.rangeTo(doctor) < 415:
-			self.move(*self.moveRelative(doctor,1))
+		if self.spinny != True:
+			if self.insane != True:
+				if self.rangeTo(doctor) < 415:
+					self.move(*self.moveRelative(doctor,1))
+			else:
+				for dalek in daleks:
+					if self.rangeTo(dalek) < 415:
+						self.move(*self.moveRelative(dalek,1))
+						break
+		else:
+			self.spincount2 += 1
+			if self.spincount2 == 25:
+				self.spincount2 = 0
+				self.spincount += 1
+			if self.spincount == 4:
+				self.spincount = 0
+			self.move(*(self.spin[0],self.spin[1]))
+			if self.spincount == 0:
+				self.spin = [1,0]
+			if self.spincount == 1:
+				self.spin = [0,1]
+			if self.spincount == 2:
+				self.spin = [-1,0]
+			if self.spincount == 3:
+				self.spin = [0,-1]
 		if self.boombolt:
 			if self.boombolt.update() == False:
 				boombolts.remove(self.boombolt)
 				self.boombolt = None
-		elif self.rangeTo(doctor) < 200:
-			direction = self.moveRelative(doctor,6)
-			self.boombolt = BoomBolt(self.rect.center,direction)
-			boombolts.add(self.boombolt)
+		else:
+			if self.insane != True:
+				if self.rangeTo(doctor) < 200:
+					direction = self.moveRelative(doctor,6)
+					self.boombolt = BoomBolt(self.rect.center,direction)
+					boombolts.add(self.boombolt)
+			else:
+				for dalek in daleks:
+					if self.rangeTo(dalek) < 200:
+						direction = self.moveRelative(dalek,6)
+						self.boombolt = BoomBolt(self.rect.center,direction)
+						boombolts.add(self.boombolt)
+						break
 		collisions = pygame.sprite.spritecollide(self, booms, False)
 		if len(collisions) > 0:
 			everything.remove(self)
@@ -456,11 +543,12 @@ class Beamer(pygame.sprite.Sprite):
 						other2.move(*self.coordinates)
 
 class Wall(pygame.sprite.Sprite):
-	def __init__(self,pos):
+	def __init__(self,pos,impermeable=False):
 		pygame.sprite.Sprite.__init__(self)
 		self.image = pygame.image.load("barrier.png").convert()
 		self.rect = self.image.get_rect()
 		self.rect.center = pos
+		self.impermeable = impermeable
 	def update(self):
 		collisions = pygame.sprite.spritecollide(self, booms, False)
 		for other in collisions:
@@ -469,11 +557,12 @@ class Wall(pygame.sprite.Sprite):
 				barriers.remove(self)
 
 class StoneWall(pygame.sprite.Sprite):
-	def __init__(self,pos):
+	def __init__(self,pos,impermeable=False):
 		pygame.sprite.Sprite.__init__(self)
 		self.image = pygame.image.load("stonewall.png").convert()
 		self.rect = self.image.get_rect()
 		self.rect.center = pos
+		self.impermeable = impermeable
 	def update(self):
 		collisions = pygame.sprite.spritecollide(self, booms, False)
 		for other in collisions:
@@ -518,37 +607,59 @@ class DeathBolt(Moveable):
 					self.rect.move_ip(*self.direction)
 					self.rect.move_ip(*self.direction)
 					self.rect.move_ip(*self.direction)
+			collisions = pygame.sprite.spritecollide(self, barriers, False)
+			for other in collisions:
+				if other != self and other.impermeable == True:
+					self.destructCountDown = 1
 			return True
 
 class Dalek(Moveable):
 	def __init__(self,pos):
 		Moveable.__init__(self,pos,"dalek.png")
 		self.deathbolt = None
+		self.paralyzed = False
+		self.terror = False
 	def update(self):
-		if self.rangeTo(doctor) < 415:
-			self.move(*self.moveRelative(doctor,1))
-		elif self.rangeTo(pond) < 300:
-			self.move(*self.moveRelative(pond,1))
-		for civilian in civilians:
-			if self.rangeTo(civilian) < 250:
-				self.move(*self.moveRelative(civilian,1))
-		if self.deathbolt:
-			if self.deathbolt.update() == False:
-				deathbolts.remove(self.deathbolt)
-				self.deathbolt = None
-		elif self.rangeTo(doctor) < 200:
-			direction = self.moveRelative(doctor,6)
-			self.deathbolt = DeathBolt(self.rect.center,direction)
-			deathbolts.add(self.deathbolt)
-		for civilian in civilians:
-			if self.deathbolt == None and self.rangeTo(civilian) < 150:
-				direction = self.moveRelative(civilian,6)
+		if self.paralyzed != True:
+			if self.terror != True:
+				if self.rangeTo(doctor) < 415:
+					self.move(*self.moveRelative(doctor,1))
+				elif self.rangeTo(pond) < 300:
+					self.move(*self.moveRelative(pond,1))
+				for civilian in civilians:
+					if self.rangeTo(civilian) < 250:
+						self.move(*self.moveRelative(civilian,1))
+			else:
+				if self.rangeTo(doctor) < 415:
+					self.move(*self.moveRelative(doctor,-1))
+				elif self.rangeTo(pond) < 300:
+					self.move(*self.moveRelative(pond,-1))
+				for civilian in civilians:
+					if self.rangeTo(civilian) < 250:
+						self.move(*self.moveRelative(civilian,-1))
+		if self.terror != True:
+			if self.deathbolt:
+				if self.deathbolt.update() == False:
+					deathbolts.remove(self.deathbolt)
+					self.deathbolt = None
+			elif self.rangeTo(doctor) < 200:
+				direction = self.moveRelative(doctor,6)
 				self.deathbolt = DeathBolt(self.rect.center,direction)
 				deathbolts.add(self.deathbolt)
-		if self.deathbolt == None and self.rangeTo(pond) < 175:
-			direction = self.moveRelative(pond,6)
-			self.deathbolt = DeathBolt(self.rect.center,direction)
-			deathbolts.add(self.deathbolt)
+			for civilian in civilians:
+				if self.deathbolt == None and self.rangeTo(civilian) < 150:
+					direction = self.moveRelative(civilian,6)
+					self.deathbolt = DeathBolt(self.rect.center,direction)
+					deathbolts.add(self.deathbolt)
+			if self.deathbolt == None and self.rangeTo(pond) < 175:
+				direction = self.moveRelative(pond,6)
+				self.deathbolt = DeathBolt(self.rect.center,direction)
+				deathbolts.add(self.deathbolt)
+		else:
+			if self.deathbolt:
+				if self.deathbolt.update() == False:
+					deathbolts.remove(self.deathbolt)
+					self.deathbolt = None
 		collisions = pygame.sprite.spritecollide(self, booms, False)
 		for other in collisions:
 			if other != self:
@@ -561,9 +672,17 @@ class SpeedyDalek(Moveable):
 	def __init__(self,pos):
 		Moveable.__init__(self,pos,"specialWeaponsDalek.png")
 		self.speedbolt = None
+		self.side = False
+		self.paralyzed = False
+		self.mark = False
 	def update(self):
-		if self.rangeTo(doctor) < 415:
-			self.move(*self.moveRelative(doctor,2))
+		if self.paralyzed == True:
+			pass
+		elif self.side != True:
+				if self.rangeTo(doctor) < 415:
+					self.move(*self.moveRelative(doctor,2))
+		else:
+			self.move(*(-2,0))
 		if self.speedbolt:
 			if self.speedbolt.update() == False:
 				speedbolts.remove(self.speedbolt)
@@ -582,6 +701,12 @@ class SpeedyDalek(Moveable):
 				everything7.remove(self)
 				speedbolts.remove(self.speedbolt)
 				speedydaleks.remove(self)
+		if self.mark == False:
+			if self.paralyzed == True:
+				self.image = pygame.image.load("petrified.png").convert_alpha()
+				self.right = pygame.image.load("petrified.png").convert_alpha()
+				self.left = pygame.transform.flip(self.right,True,False)
+				self.mark = True
 
 class SpeedBolt(Moveable):
 	def __init__(self,pos,direction):
@@ -619,6 +744,10 @@ class SpeedBolt(Moveable):
 					self.rect.move_ip(*self.direction)
 					print "Game Over --you died    Note: avoid the faster daleks repeating weapons, as they will kill you and only you instantly."
 					raise SystemExit
+			collisions = pygame.sprite.spritecollide(self, barriers, False)
+			for other in collisions:
+				if other != self and other.impermeable == True:
+					self.destructCountDown = 1
 			return True
 
 
@@ -722,8 +851,16 @@ class WeepingAngel(Moveable):
 class Silence(Moveable):
 	def __init__(self,pos):
 		Moveable.__init__(self,pos,"silence .png")
+		self.blind = False
+		self.dir = [(1,0),1]
 	def update(self,sights):
-		if random.choice([True,False]):
+		if self.blind:
+			if self.dir[1] < 1:
+				self.dir = [random.choice([(1,0),(0,1),(-1,0),(0,-1)]),random.choice(range(25))]
+			else:
+				self.move(*self.dir[0])
+				self.dir[1] -= 1
+		elif random.choice([True,False]):
 			self.move(*self.moveRelative(doctor,1))
 		for part in sights:
 			if part == self or part == doctor:
@@ -782,6 +919,10 @@ class cyberbolt(Moveable):
 			if self.exploded == False:
 				self.rect.move_ip(*self.direction)
 				self.rect.move_ip(*self.direction)
+			collisions = pygame.sprite.spritecollide(self, barriers, False)
+			for other in collisions:
+				if other != self and other.impermeable == True:
+					self.destructCountDown = 1
 			return True
 
 class cyberman(Moveable):
@@ -789,12 +930,23 @@ class cyberman(Moveable):
 		Moveable.__init__(self,pos,"cyber.png")
 		self.boombolt = None
 		self.life = 300
+		self.spazzy=False
+		self.count = 0
 	def update(self,others):
 		target = doctor
 		for other in others:
 			if self.rangeTo(other) < 250:
 				if other != self:
-					self.move(*self.moveRelative(other,5))
+					if self.spazzy != True:
+						self.move(*self.moveRelative(other,5))
+					else:
+						self.count += 1
+						if self.count == 10:
+							self.count = 0
+						if self.count < 4:
+							self.move(*(5,0))
+						else:
+							self.move(*(0,5))
 					target = other
 					break
 		if self.boombolt:
@@ -844,6 +996,10 @@ class silencebolt(Moveable):
 					self.rect.move_ip(*self.direction)
 					self.rect.move_ip(*self.direction)
 					self.rect.move_ip(*self.direction)
+			collisions = pygame.sprite.spritecollide(self, barriers, False)
+			for other in collisions:
+				if other != self and other.impermeable == True:
+					self.destructCountDown = 1
 			return True
 
 class silenceorder(Moveable):
@@ -887,8 +1043,10 @@ class Pond(Moveable):
 		self.sonicWave = None
 	def update(self):
 		if self.rangeTo(doctor) < 200:
-			if self.rangeTo(doctor) < 90:
-				self.move(*self.moveRelative(doctor,-2))
+			if self.rangeTo(doctor) < 100:
+				self.move(*self.moveRelative(doctor,-1))
+			elif self.rangeTo(doctor) < 200:
+				pass
 			else:
 				self.move(*self.moveRelative(doctor,2))
 		else:
@@ -944,19 +1102,21 @@ class Pond(Moveable):
 		collisions1 = pygame.sprite.spritecollide(self, booms, False)
 		for other in collisions1:
 			if other != self:
-				everything.remove(self)
-				ponds.remove(self)
-				sonics.remove(self.sonicWave)
-				print "Game Over --Amelia Pond died"
-				raise SystemExit
+				pass
+				#everything.remove(self)
+				#ponds.remove(self)
+				#sonics.remove(self.sonicWave)
+				#print "Game Over --Amelia Pond died"
+				#raise SystemExit
 		collisions2 = pygame.sprite.spritecollide(self, deathbolts, False)
 		for other in collisions2:
 			if other != self:
-				everything.remove(self)
-				ponds.remove(self)
-				sonics.remove(self.sonicWave)
-				print "Game Over --Amelia Pond died"
-				raise SystemExit
+				pass
+				#everything.remove(self)
+				#ponds.remove(self)
+				#sonics.remove(self.sonicWave)
+				#print "Game Over --Amelia Pond died"
+				#raise SystemExit
 
 class Rory(Moveable):
 	def __init__(self,pos):
@@ -968,8 +1128,10 @@ class Rory(Moveable):
 			if self.counting == 0:
 				booms.remove(self)
 		if self.rangeTo(doctor) < 375:
-			if self.rangeTo(doctor) < 90:
-				self.move(*self.moveRelative(doctor,-2))
+			if self.rangeTo(doctor) < 100:
+				self.move(*self.moveRelative(doctor,-1))
+			elif self.rangeTo(doctor) < 200:
+				pass
 			else:
 				self.move(*self.moveRelative(doctor,2))
 		else:
@@ -1032,17 +1194,19 @@ class Rory(Moveable):
 		collisions1 = pygame.sprite.spritecollide(self, booms, False)
 		for other in collisions1:
 			if other != self:
-				everything.remove(self)
-				ponds.remove(self)
-				print "Game Over --Rory died"
-				raise SystemExit
+				#everything.remove(self)
+				#ponds.remove(self)
+				#print "Game Over --Rory died"
+				#raise SystemExit
+				pass
 		collisions2 = pygame.sprite.spritecollide(self, deathbolts, False)
 		for other in collisions2:
 			if other != self:
-				everything.remove(self)
-				ponds.remove(self)
-				print "Game Over --Rory died"
-				raise SystemExit
+				#everything.remove(self)
+				#ponds.remove(self)
+				#print "Game Over --Rory died"
+				#raise SystemExit
+				pass
 
 class sonicWave(Moveable):
 	def __init__(self,pos,direction):
@@ -1073,6 +1237,10 @@ class sonicWave(Moveable):
 			for other in collisions:
 				if other != self:
 					other.move(*other.moveRelative(doctor,-2))
+			collisions = pygame.sprite.spritecollide(self, barriers, False)
+			for other in collisions:
+				if other != self and other.impermeable == True:
+					self.destructCountDown = 1
 			return True
 
 class returner():
@@ -1086,6 +1254,7 @@ class regenbolt(Moveable):
 		Moveable.__init__(self,pos,"regenbolt.png")
 		self.destructCountDown = 100
 		self.direction = direction
+		self.past = []
 		if abs(self.direction[1]) > abs(self.direction[0]):
 			self.image = self.vertical
 			self.rect = self.image.get_rect()
@@ -1102,51 +1271,243 @@ class regenbolt(Moveable):
 			self.rect.move_ip(*self.direction)
 			self.rect.move_ip(*self.direction)
 			self.rect.move_ip(*self.direction)
-			self.rect.move_ip(*self.direction)
-			self.rect.move_ip(*self.direction)
-			randomizer = random.choice(range(10))
+			randomizer = random.choice(range(15))
+			randomizer2 = random.choice(range(35))
 			collisions = pygame.sprite.spritecollide(self, everything, False)
 			for other in collisions:
 				if other != self:
-					if randomizer == 7:
+					if randomizer2 == 7:
 						self.destruct()
 			collisions = pygame.sprite.spritecollide(self, daleks, False)
 			for other in collisions:
 				if other != self:
-					if randomizer > 4:
-						other.move(*other.moveRelative(doctor,-8))
-					elif randomizer < 4:
-						print "EMP"
-						daleks.remove(other)
-						everything7.remove(other)
+					if other in self.past:
+						pass
 					else:
-						print "WEAPONS DISABLED"
-						deathbolts.remove(other.deathbolt)
-						other.deathbolt = returner()
+						self.past.append(other)
+						other.move(*other.moveRelative(doctor,-20))
+						if randomizer > 9:
+							print "STRIKE"
+							deathbolts.remove(other.deathbolt)
+							other.move(*other.movePerpendicular(doctor,-60))
+						elif randomizer == 8:
+							print "TERROR"
+							other.terror = True
+						elif randomizer < 3:
+							print "EMP"
+							other.paralyzed = True
+							deathbolts.remove(other.deathbolt)
+							other.deathbolt = returner()
+						elif randomizer >= 5:
+							print "MOTORS DISABLED"
+							other.paralyzed = True
+						else:
+							print "WEAPONS DISABLED"
+							deathbolts.remove(other.deathbolt)
+							other.deathbolt = returner()
 			collisions = pygame.sprite.spritecollide(self, weapondaleks, False)
 			for other in collisions:
 				if other != self:
-					other.move(*other.moveRelative(doctor,-8))
+					if other in self.past:
+						pass
+					else:
+						self.past.append(other)
+						other.move(*other.moveRelative(doctor,-20))
+						if randomizer > 10:
+							print "STRIKE"
+							boombolts.remove(other.boombolt)
+							other.move(*other.movePerpendicular(doctor,-60))
+						elif randomizer == 9:
+							print "INSANITY"
+							other.insane = True
+						elif randomizer < 4:
+							print "ENTOMBED"
+							things = pygame.sprite.RenderUpdates()
+							thing = Wall(other.rect.center,True)
+							everything.add(thing)
+							things.add(thing)
+							barriers.add(thing)
+							pygame.display.update(things.draw((screen)))
+							everything.remove(other)
+							everything7.remove(other)
+							boombolts.remove(other.boombolt)
+							booms.remove(other.boombolt)
+							weapondaleks.remove(other)
+							things = None
+							self.rect.move_ip(*self.direction)
+							self.rect.move_ip(*self.direction)
+							self.rect.move_ip(*self.direction)
+							self.rect.move_ip(*self.direction)
+							self.rect.move_ip(*self.direction)
+							self.rect.move_ip(*self.direction)
+							self.rect.move_ip(*self.direction)
+							self.rect.move_ip(*self.direction)
+							self.rect.move_ip(*self.direction)
+							self.rect.move_ip(*self.direction)
+							self.rect.move_ip(*self.direction)
+							self.rect.move_ip(*self.direction)
+							self.rect.move_ip(*self.direction)
+							self.rect.move_ip(*self.direction)
+							self.rect.move_ip(*self.direction)
+							self.rect.move_ip(*self.direction)
+						elif randomizer >= 5:
+							print "MOTORS SABOTAGED"
+							other.spinny = True
+						else:
+							print "WEAPONS SABOTAGED"
+							everything2.add(other)
 			collisions = pygame.sprite.spritecollide(self, speedydaleks, False)
 			for other in collisions:
 				if other != self:
-					other.move(*other.moveRelative(doctor,-8))
+					if other in self.past:
+						pass
+					else:
+						self.past.append(other)
+						other.move(*other.moveRelative(doctor,-20))
+						if randomizer > 12:
+							print "STRIKE"
+							speedbolts.remove(other.speedbolt)
+							other.move(*other.movePerpendicular(doctor,-60))
+						elif randomizer >= 9:
+							print "DEGRADED"
+							things = pygame.sprite.RenderUpdates()
+							thing = Dalek(other.rect.center)
+							everything.add(thing)
+							everything2.add(thing)
+							everything7.add(thing)
+							things.add(thing)
+							daleks.add(thing)
+							pygame.display.update(things.draw((screen)))
+							everything.remove(other)
+							everything7.remove(other)
+							speedbolts.remove(other.speedbolt)
+							speedydaleks.remove(other)
+							things = None
+							self.rect.move_ip(*self.direction)
+							self.rect.move_ip(*self.direction)
+							self.rect.move_ip(*self.direction)
+							self.rect.move_ip(*self.direction)
+							self.rect.move_ip(*self.direction)
+							self.rect.move_ip(*self.direction)
+							self.rect.move_ip(*self.direction)
+							self.rect.move_ip(*self.direction)
+							self.rect.move_ip(*self.direction)
+							self.rect.move_ip(*self.direction)
+							self.rect.move_ip(*self.direction)
+							self.rect.move_ip(*self.direction)
+							self.rect.move_ip(*self.direction)
+							self.rect.move_ip(*self.direction)
+							self.rect.move_ip(*self.direction)
+							self.rect.move_ip(*self.direction)
+						elif randomizer < 5:
+							print "PETRIFIED"
+							other.paralyzed = True
+							speedbolts.remove(other.speedbolt)
+							other.speedbolt = returner()
+						elif randomizer > 6:
+							print "MOTORS BROKEN"
+							other.side = True
+						else:
+							print "WEAPONS DISABLED"
+							speedbolts.remove(other.speedbolt)
+							other.speedbolt = returner()
 			collisions = pygame.sprite.spritecollide(self, cybers, False)
 			for other in collisions:
 				if other != self:
-					other.move(*other.moveRelative(doctor,-8))
+					if other in self.past:
+						pass
+					else:
+						self.past.append(other)
+						other.move(*other.moveRelative(doctor,-20))
+						if randomizer > 9:
+							print "STRIKE"
+							boombolts.remove(other.boombolt)
+							other.move(*other.movePerpendicular(doctor,-60))
+						elif randomizer == 8:
+							print "MOTORS CORRUPTED"
+							self.spazzy=True
+						elif randomizer < 3:
+							print "CIVILIAN RESTORED"
+							things = pygame.sprite.RenderUpdates()
+							thing = Civilian(other.rect.center)
+							everything.add(thing)
+							everything2.add(thing)
+							everything7.add(thing)
+							things.add(thing)
+							civilians.add(thing)
+							pygame.display.update(things.draw((screen)))
+							everything.remove(other)
+							everything7.remove(other)
+							boombolts.remove(other.boombolt)
+							cybers.remove(other)
+							things = None
+							self.rect.move_ip(*self.direction)
+							self.rect.move_ip(*self.direction)
+							self.rect.move_ip(*self.direction)
+							self.rect.move_ip(*self.direction)
+							self.rect.move_ip(*self.direction)
+							self.rect.move_ip(*self.direction)
+							self.rect.move_ip(*self.direction)
+							self.rect.move_ip(*self.direction)
+							self.rect.move_ip(*self.direction)
+							self.rect.move_ip(*self.direction)
+							self.rect.move_ip(*self.direction)
+							self.rect.move_ip(*self.direction)
+							self.rect.move_ip(*self.direction)
+							self.rect.move_ip(*self.direction)
+							self.rect.move_ip(*self.direction)
+							self.rect.move_ip(*self.direction)
+						elif randomizer >= 5:
+							print "WEAPONS SABOTAGED"
+							everything2.add(other)
+						else:
+							print "WEAPONS DISABLED"
+							boombolts.remove(other.boombolt)
+							other.boombolt = returner()
 			collisions = pygame.sprite.spritecollide(self, angels, False)
 			for other in collisions:
 				if other != self:
-					other.move(*other.moveRelative(doctor,-8))
+					if other in self.past:
+						pass
+					else:
+						self.past.append(other)
+						other.move(*other.moveRelative(doctor,-20))
+						if randomizer > 9:
+							print "STRIKE"
+							other.timeLapse += 100
+							other.move(*other.movePerpendicular(doctor,-60))
+						else:
+							self.destruct()
 			collisions = pygame.sprite.spritecollide(self, silence, False)
 			for other in collisions:
 				if other != self:
-					other.move(*other.moveRelative(doctor,-8))
+					if other in self.past:
+						pass
+					else:
+						self.past.append(other)
+						other.move(*other.moveRelative(doctor,-20))
+						if randomizer > 9:
+							print "STRIKE"
+							everything.remove(other)
+							silence.remove(other)
+							everything2.remove(other)
+						elif randomizer == 8:
+							print "PROJECTION OF MAYHEM"
+							#other.mayhem()
+						elif randomizer < 3:
+							print "ELECTRIC BACKFIRE"
+							#other.shock()
+						elif randomizer >= 5:
+							print "FATIGUE"
+							other.paralyzed = True
+						else:
+							print "BLINDNESS"
+							other.blind = True
 			collisions = pygame.sprite.spritecollide(self, reactors, False)
 			for other in collisions:
 				if other != self:
 					reactors.remove(other)
+					barriers.add(other)
 			collisions = pygame.sprite.spritecollide(self, bombs, False)
 			for other in collisions:
 				if other != self:
@@ -1159,21 +1520,25 @@ class regenbolt(Moveable):
 			for other in collisions:
 				if other != self:
 					thing = other.rect.center
-					other = Beamer(thing,(100,100))
+					everything.remove(other)
+					everything2.remove(other)
+					ventGates.remove(other)
+					beamers.add(Beamer(thing,(random.choice(range(300)),random.choice(range(300)))))
 			collisions = pygame.sprite.spritecollide(self, beamers, False)
 			for other in collisions:
 				if other != self:
 					pass
 			collisions = pygame.sprite.spritecollide(self, barriers, False)
 			for other in collisions:
-				if other != self:
+				if other != self and other.impermeable == False:
 					everything.remove(other)
 					barriers.remove(other)
 			collisions = pygame.sprite.spritecollide(self, civilians, False)
 			for other in collisions:
 				if other != self:
-					other.move(*other.moveRelative(doctor,8))
+					other.move(*other.moveRelative(doctor,60))
 			return True
+			self.past = self.past[-2:]
 	def destruct(self):
 		print "TIME RIFT"
 
@@ -1230,7 +1595,7 @@ class Doctor(Moveable):
 			if item.type == pygame.KEYUP and item.key == pygame.K_h:
                                 self.healing = False
 			if item.type == pygame.KEYDOWN and item.key == pygame.K_f:
-				if self.energy == 60:
+				if self.energy >= 200:
 					self.sprinting = True
 					self.counter2 = 40
 			if item.type == pygame.KEYUP and item.key == pygame.K_f:
@@ -1260,7 +1625,7 @@ class Doctor(Moveable):
 					self.move(0,2)
 			else:
 				self.energy -= 60
-		if self.energy < 300:
+		if self.energy < 200:
 			self.energy += 1
 	def checkHealth(self,health,stamina,regen):
 		if health < 0:
@@ -1320,11 +1685,11 @@ class Doctor(Moveable):
 			if self.rbolt.update() == False:
 				sonics.remove(self.rbolt)
 				self.rbolt = None
-		elif self.regenbolt == True and regen > 700:
+		elif self.regenbolt == True and regen > 600:
 			direction = self.d
 			self.rbolt = regenbolt(self.rect.center,direction)
 			sonics.add(self.rbolt)
-			regen -= 700
+			regen -= 600
 		return regen
 pygame.init()
 screen = pygame.display.set_mode((800,800))
@@ -1409,7 +1774,7 @@ elif level == "setup1":
 	#silence placement
 	silence.add(Silence((750,50)),Silence((750,100)),Silence((700,50)))
 	#cyber placement
-	cybers.add(cyberman((375,600)))
+	cybers.add(cyberman((375,600)),cyberman((300,600)))
 	#civilian placement
 	civilians.add(Civilian((540,40)),Civilian((540,90)),Civilian((650,50)),Civilian((750,200)),Civilian((100,600)),Civilian((50,600)))
 	#environment placement
@@ -1448,13 +1813,13 @@ else:
 	raise RuntimeError
 
 #wall borders
-barriers.add(Wall((0,0)),Wall((0,45)),Wall((0,90)),Wall((0,135)),Wall((0,180)),Wall((0,225)),Wall((0,270)),Wall((0,315)),Wall((0,360)))
-barriers.add(Wall((0,495)),Wall((0,540)),Wall((0,585)))
-barriers.add(Wall((0,405)),Wall((0,450)),Wall((0,595)),Wall((0,640)),Wall((0,685)),Wall((0,730)),Wall((0,775)),Wall((0,800)))
-barriers.add(Wall((45,0)),Wall((90,0)),Wall((135,0)),Wall((180,0)),Wall((225,0)),Wall((270,0)),Wall((315,0)),Wall((360,0)))
-barriers.add(Wall((495,0)),Wall((540,0)),Wall((585,0)))
-barriers.add(Wall((405,0)),Wall((450,0)),Wall((595,0)),Wall((640,0)),Wall((685,0)),Wall((730,0)),Wall((775,0)),Wall((800,0)))
-barriers.add(Wall((800,45)),Wall((800,90)),Wall((800,135)),Wall((800,180)),Wall((800,225)),Wall((800,270)),Wall((800,315)),Wall((800,360)))
+barriers.add(Wall((0,0),True),Wall((0,45),True),Wall((0,90),True),Wall((0,135),True),Wall((0,180),True),Wall((0,225),True),Wall((0,270),True),Wall((0,315),True),Wall((0,360),True))
+barriers.add(Wall((0,495),True),Wall((0,540),True),Wall((0,585),True))
+barriers.add(Wall((0,405),True),Wall((0,450),True),Wall((0,595),True),Wall((0,640),True),Wall((0,685),True),Wall((0,730),True),Wall((0,775),True),Wall((0,800),True))
+barriers.add(Wall((45,0),True),Wall((90,0),True),Wall((135,0),True),Wall((180,0),True),Wall((225,0),True),Wall((270,0),True),Wall((315,0),True),Wall((360,0),True))
+barriers.add(Wall((495,0),True),Wall((540,0),True),Wall((585,0),True))
+barriers.add(Wall((405,0),True),Wall((450,0),True),Wall((595,0),True),Wall((640,0),True),Wall((685,0),True),Wall((730,0),True),Wall((775,0),True),Wall((800,0),True))
+barriers.add(Wall((800,45),True),Wall((800,90),True),Wall((800,135),True),Wall((800,180),True),Wall((800,225),True),Wall((800,270),True),Wall((800,315),True),Wall((800,360),True))
 barriers.add(Wall((800,495)),Wall((800,540)),Wall((800,585)))
 barriers.add(Wall((800,405)),Wall((800,450)),Wall((800,595)),Wall((800,640)),Wall((800,685)),Wall((800,730)),Wall((800,775)),Wall((800,800)))
 barriers.add(Wall((45,800)),Wall((90,800)),Wall((135,800)),Wall((180,800)),Wall((225,800)),Wall((270,800)),Wall((315,800)),Wall((360,800)))
@@ -1488,6 +1853,9 @@ pygame.display.update(cybers.draw((screen)))
 pygame.display.update(silence.draw((screen)))
 pygame.display.update(beamers.draw((screen)))
 echoHealth = False
+
+print regen
+
 while True:
 	daleks.update()
 	weapondaleks.update()
@@ -1518,7 +1886,8 @@ while True:
 		stamina = stamina - 1
 	time.sleep(0.04)
 	if regen < 900:
-		regen = regen + 50
+		#regen = regen + 10
+		regen = regen + .4
 	pygame.display.update(daleks.draw(screen))
 	pygame.display.update(doctors.draw(screen))
 	pygame.display.update(deathbolts.draw(screen))
@@ -1541,7 +1910,7 @@ while True:
 	for boom in booms:
 		collisionsA = pygame.sprite.spritecollide(boom, barriers, False)
                 for other in collisionsA:
-	                if other != boom:
+	                if other != boom and other.impermeable == False:
 				everything.remove(other)
 				barriers.remove(other)
 	for VentGate in ventGates:
@@ -1568,7 +1937,7 @@ while True:
 		print "Game Over, excessive deaths of civilians. You shouldn't let twelve civilians get slaughtered like that. You must be almost trying to kill them. Seriously..."
 		raise SystemExit
 	if saved >= 4 or dead < 8:
-		if len(foes) == 0:
+		if len(daleks) == 0 and len(weapondaleks) == 0 and len(speedydaleks) == 0 and len(silence) == 0:
 			endcollisions = pygame.sprite.spritecollide(doctor, tardises, False)
 			for other in endcollisions:
 				if other != doctor:
