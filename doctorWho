@@ -511,11 +511,28 @@ class SpecialWeaponsDalek(Moveable):
 		self.spin = [1,0]
 		self.spincount = 0
 		self.spincount2 = 0
+		self.led = False
 	def update(self):
+		#print self.boombolt
+		if self.boombolt:
+			if self.boombolt.update() == False:
+				boombolts.remove(self.boombolt)
+				projectiles.remove(self.boombolt)
+				self.boombolt = None
+		self.led = False
+		for leader in leaders:
+			if self.rangeTo(leader) < 250:
+				self.led = True
 		if self.spinny != True:
 			if self.insane != True:
-				if self.rangeTo(doctor) < 415:
-					self.move(*self.moveRelative(doctor,1))
+				if self.led != True:
+					if self.rangeTo(doctor) < 415:
+						self.move(*self.moveRelative(doctor,1))
+				else:
+					if self.rangeTo(doctor) < 480:
+						self.move(*self.moveRelative(doctor,2))
+					elif self.rangeTo(tardis) < 480:
+						self.move(*self.moveRelative(tardis,2))
 			else:
 				for dalek in daleks:
 					if self.rangeTo(dalek) < 415:
@@ -537,17 +554,33 @@ class SpecialWeaponsDalek(Moveable):
 				self.spin = [-1,0]
 			if self.spincount == 3:
 				self.spin = [0,-1]
-		if self.boombolt:
-			if self.boombolt.update() == False:
-				boombolts.remove(self.boombolt)
-				projectiles.remove(self.boombolt)
-				self.boombolt = None
-		else:
+		#print self.boombolt
+		if self.boombolt == None:
 			if self.insane != True:
-				if self.rangeTo(doctor) < 200:
-					direction = self.moveRelative(doctor,6)
-					self.boombolt = BoomBolt(self.rect.center,direction)
-					boombolts.add(self.boombolt)
+				if self.led == True:
+					if self.rangeTo(doctor) < 200:
+						direction = self.moveRelative(doctor,6)
+						for item in everything2:
+							if self.moveRelative(item,6) == direction and self.rangeTo(item) < 100:
+								#print "MARK"
+								pass
+							else:
+								#print "SHOT"
+								direction = self.moveRelative(doctor,6)
+								self.boombolt = BoomBolt(self.rect.center,direction)
+								boombolts.add(self.boombolt)
+								break
+				else:
+					if self.rangeTo(doctor) < 200:
+						direction = self.moveRelative(doctor,6)
+						self.boombolt = BoomBolt(self.rect.center,direction)
+						boombolts.add(self.boombolt)
+					else:
+						for civilian in civilians:
+							if self.rangeTo(civilian) < 200:
+								direction = self.moveRelative(civilian,6)
+								self.boombolt = BoomBolt(self.rect.center,direction)
+								boombolts.add(self.boombolt)
 			else:
 				for dalek in daleks:
 					if self.rangeTo(dalek) < 200:
@@ -563,6 +596,8 @@ class SpecialWeaponsDalek(Moveable):
 			booms.remove(self.boombolt)
 			projectiles.remove(self.boombolt)
 			weapondaleks.remove(self)
+
+#daleks will be given about 1/2 roundbolts. This will mean many different sorts of daleks
 
 class VentGate(pygame.sprite.Sprite):
 	def __init__(self,pos):
@@ -584,6 +619,9 @@ class VentGate(pygame.sprite.Sprite):
 					self.image = self.image1
 					everything.remove(self)
 					screen.fill((150,150,200),self.rect)
+	def move(self,direction):
+		screen.fill((150,150,200),self.rect)
+		self.rect.move_ip(direction)
 
 class Beamer(pygame.sprite.Sprite):
 	def __init__(self,pos,coordinates):
@@ -683,9 +721,32 @@ class Dalek(Moveable):
 		self.deathbolt = None
 		self.paralyzed = False
 		self.terror = False
+		self.led = False
 	def update(self):
+		self.led = False
+		for leader in leaders:
+			if self.rangeTo(leader) < 250:
+				self.led = True
 		if self.paralyzed != True:
 			if self.terror != True:
+				if self.led == True:
+					if self.rangeTo(doctor) < 450:
+						self.move(*self.moveRelative(doctor,1))
+					for item in booms:
+						if self.rangeTo(item) < 300:
+							self.move(*self.moveRelative(item,-1))
+					for item in reactors:
+						if self.rangeTo(item) < 150:
+							self.move(*self.moveRelative(item,-1))
+					for item in bombs:
+						if self.rangeTo(item) < 150:
+							self.move(*self.moveRelative(item,-1))
+					for item in crates:
+						if self.rangeTo(item) < 150:
+							self.move(*self.moveRelative(item,-1))
+					for item in boombolts:
+						if self.rangeTo(item) < 150:
+							self.move(*self.moveRelative(item,-1))
 				if self.rangeTo(doctor) < 415:
 					self.move(*self.moveRelative(doctor,1))
 				elif self.rangeTo(pond) < 300:
@@ -708,9 +769,15 @@ class Dalek(Moveable):
 					projectiles.remove(self.deathbolt)
 					self.deathbolt = None
 			elif self.rangeTo(doctor) < 200:
-				direction = self.moveRelative(doctor,6)
-				self.deathbolt = DeathBolt(self.rect.center,direction)
-				deathbolts.add(self.deathbolt)
+				if self.led:
+					if self.rect.x == doctor.rect.x or self.rect.y == doctor.rect.y:
+						direction = self.moveRelative(doctor,6)
+						self.deathbolt = DeathBolt(self.rect.center,direction)
+						deathbolts.add(self.deathbolt)
+				else:
+					direction = self.moveRelative(doctor,6)
+					self.deathbolt = DeathBolt(self.rect.center,direction)
+					deathbolts.add(self.deathbolt)
 			for civilian in civilians:
 				if self.deathbolt == None and self.rangeTo(civilian) < 150:
 					direction = self.moveRelative(civilian,6)
@@ -735,6 +802,54 @@ class Dalek(Moveable):
 				projectiles.remove(self.deathbolt)
 				daleks.remove(self)
 
+class LeaderDalek(Moveable):
+	def __init__(self,pos):
+		Moveable.__init__(self,pos,"dalekleader.png")
+		self.deathbolt = None
+		leaders.add(self)
+	def update(self):
+		if self.rangeTo(doctor) < 460:
+			self.move(*self.moveRelative(doctor,1))
+		for item in mortars:
+			if self.rangeTo(item) < 70:
+				item.target = doctor.rect.center
+			elif self.rangeTo(item) < 150:
+				self.move(*self.moveRelative(item,2))
+		for item in daleks:
+			if item not in leaders:
+				if self.rangeTo(item) < 75:
+					item.move(*item.moveRelative(self,-6))
+		for item in booms:
+			if self.rangeTo(item) < 300:
+				self.move(*self.moveRelative(item,-1))
+		for item in reactors:
+			if self.rangeTo(item) < 150:
+				self.move(*self.moveRelative(item,-1))
+		for item in bombs:
+			if self.rangeTo(item) < 150:
+				self.move(*self.moveRelative(item,-1))
+		for item in crates:
+			if self.rangeTo(item) < 150:
+				self.move(*self.moveRelative(item,-1))
+		for item in boombolts:
+			if self.rangeTo(item) < 150:
+				self.move(*self.movePerpendicular(item,-6))
+		if self.rangeTo(doctor) < 460:
+			self.move(*self.moveRelative(doctor,1))
+		for civilian in civilians:
+			if self.rangeTo(civilian) < 250:
+				self.move(*self.moveRelative(civilian,1))
+		collisions = pygame.sprite.spritecollide(self, booms, False)
+		for other in collisions:
+			if other != self:
+				everything.remove(self)
+				everything7.remove(self)
+				deathbolts.remove(self.deathbolt)
+				projectiles.remove(self.deathbolt)
+				daleks.remove(self)
+
+#Doom Angel: an angel with rigt powers. Can command other units, travel through rifts, make rifts, blast regenboltesque creations, control lights, move walls, make walls, lead angels, blow up silence, possess civilians, overload controls, and much more.
+
 class SpeedyDalek(Moveable):
 	def __init__(self,pos):
 		Moveable.__init__(self,pos,"speedydalek.png")
@@ -742,10 +857,22 @@ class SpeedyDalek(Moveable):
 		self.side = False
 		self.paralyzed = False
 		self.mark = False
+		self.led = False
 	def update(self):
+		self.led = False
+		for leader in leaders:
+			if self.rangeTo(leader) < 250:
+				self.led = True
 		if self.paralyzed == True:
 			pass
 		elif self.side != True:
+			if self.led == True:
+				if self.rangeTo(doctor) < 450:
+					self.move(*self.moveRelative(doctor,2))
+				for leader in leaders:
+					if self.rangeTo(leader) < 200:
+						self.move(*self.moveRelative(leader,2))
+			else:
 				if self.rangeTo(doctor) < 415:
 					self.move(*self.moveRelative(doctor,2))
 		else:
@@ -1045,6 +1172,79 @@ class cyberman(Moveable):
 			booms.remove(self.boombolt)
 			projectiles.remove(self.boombolt)
 			cybers.remove(self)
+
+
+class MortarShell(Moveable):
+	def __init__(self,pos):
+		Moveable.__init__(self,pos,"shell1.png")
+		self.destructCountDown = 24
+		self.x = pos
+		self.imgs = ["shell1.png","shell1.png","shell2.png","shell2.png","shell3.png","shell3.png","shell4.png","shell4.png","shell5.png","shell5.png","shell6.png","shell6.png","shell7.png","shell7.png","shell8.png","shell8.png","shell9.png","shell9.png"]
+		self.index = 0
+		self.boom = "plasmaboom.png"
+		self.exploded = False
+                self.countdown = 5
+        def destruct(self):
+                screen.fill((150,150,200),self.rect)
+                self.init2(self.rect.center,self.boom)
+                booms.add(self)
+                self.exploded = True
+        def PossibleExplode(self):
+                #if self.exploded == False:
+		#	collisions = pygame.sprite.spritecollide(self, everything2, False)
+                #        for other in collisions:
+                #                if other != self:
+                #                        self.destruct()
+                if self.exploded == True:
+                        if self.countdown > 0:
+                                self.countdown = self.countdown - 1
+                        if self.countdown == 0:
+                                self.destruct()
+		return self.exploded
+	def update(self):
+		#print self.index
+		screen.fill((150,150,200),self.rect)
+		self.destructCountDown = self.destructCountDown - 1
+		screen.fill((150,150,200),self.rect)
+                self.init2(self.rect.center,self.imgs[self.index])
+		if self.destructCountDown < 7:
+			self.destruct()
+		else:
+			self.index += 1
+		if self.destructCountDown == 0:
+			return False
+		else:
+			return True
+
+#ROUNDBOLTS MAY MOVE NOT ALONG AN AXIS, SONIC, LASER, LIGHT, AND ELECTRO BOLTS WILL BE ROUND
+
+class Mortar(Moveable):
+	def __init__(self,pos,target,fire):
+		Moveable.__init__(self,pos,"mortar.png")
+		self.boombolt = None
+		self.target = target
+		self.fire = fire/2
+		self.count = fire
+		everything.add(self)
+		everything2.add(self)
+	def update(self):
+		self.fire -= 1
+		if self.boombolt:
+			if self.boombolt.update() == False:
+				boombolts.remove(self.boombolt)
+				self.boombolt = None
+		else:
+			if self.fire < 1:
+				self.boombolt = MortarShell(self.target)
+				boombolts.add(self.boombolt)
+				self.fire = self.count
+		collisions = pygame.sprite.spritecollide(self, booms, False)
+		if len(collisions) > 0:
+			everything.remove(self)
+			everything7.remove(self)
+			boombolts.remove(self.boombolt)
+			booms.remove(self.boombolt)
+			mortars.remove(self)
 
 class silencebolt(Moveable):
 	def __init__(self,pos,direction):
@@ -1991,6 +2191,8 @@ cybers = pygame.sprite.RenderUpdates()
 silence = pygame.sprite.RenderUpdates()
 beamers = pygame.sprite.RenderUpdates()
 rifts = pygame.sprite.RenderUpdates()
+mortars = pygame.sprite.RenderUpdates()
+leaders = pygame.sprite.RenderUpdates()
 projectiles2 = projectiles
 
 #IMPORTANT
@@ -1998,6 +2200,9 @@ projectiles2 = projectiles
 #Make a 'team' class. Each team will have a def for how it deals with each other team. Each team will also be in a renderupdates group, as members of a team will observe other team groups. Team defs will allow, say, a silence, and a silence order member, to use the same def, as the def will basically say, "if you have this info", or perhaps, "if your a silence". Basically, a team represents the main AI of a group. Some very individual exceptions will be present, so that a specific team member type could treat another team type radically differently from the others, or even be a rogue fighter on the team.
 #READ THE ABOVE
 #IMPORTANT
+
+arena = True
+arena2 = False
 
 if level == '':
 	level = 'setup1'
@@ -2009,6 +2214,7 @@ if level == "standard":
 	speedydaleks.add(SpeedyDalek((150,300)),SpeedyDalek((150,600)))
 	daleks.add(Dalek((100,200)),Dalek((300,500)),Dalek((300,700)),Dalek((500,100)),Dalek((300,100)),silenceorder((200,50)),silenceorder((250,100)),silenceorder((300,150)))
 	weapondaleks.add(SpecialWeaponsDalek((200,300)))
+	daleks.add(LeaderDalek((500,400)))
 	#cyber placement
 	cybers.add(cyberman((50,50)),cyberman((350,470)))
 	#silence placement
@@ -2021,6 +2227,7 @@ if level == "standard":
 	bombs.add(Bomb((100,500)),Bomb((500,500)),Bomb((100,500)))
 	ventGates.add(VentGate((600,600)),VentGate((100,150)),VentGate((100,600)),VentGate((667,360)))
 	beamers.add(Beamer((420,420),(0,-100)))
+	mortars.add(Mortar((600,450),(700,100),50))
 	#angel placement
 	angels.add(WeepingAngel((550,550)))
 	#specific level
@@ -2046,11 +2253,13 @@ elif level == "setup1":
 	#time rifts: note: to units, rifts will suck them in and kill them, even angels. angels can also be killed by two simultaneous explosions. to other things, like sonics, death rays, and heal rays, it will transport them a certain amount into the future, by a number seen on the rift. This gives a mirror and delay. And, ofcoarse, a rift could possibly have certain times it is present or not, and a unit will keep it to occupied to suck in other units for a few seconds. There is such a thing as a rift explosion, which is a larger, short lived time rift. Regenoration blasts will heal allies, push all enemies, have roughly a fifty percent chance of destroying a wall it passes through, and could possibly explode which would kill enemies, could possibly cause a small rift explosion, or could possibly kill an enemy. It will also, of coarse, have a chance of just pushing them. This depends partly upon the enemy, partly upon randomness, and partly upon later progression. They can also supressively implode volatile map components.
 	#intro
 	print "This setup includes a dalek outpost with captive civilians, an attacking force of silence, a lone cyberman pursuer, and a large amount of weeping angels in an abandoned mine. Good luck..."
-	#NOTE: ALL THAT REMAINS TO BE PLACED IS DALEK AND ENVIRONMENT PLACEMENT
 	#dalek placement
 	speedydaleks.add(SpeedyDalek((320,150)),SpeedyDalek((370,150)))
 	daleks.add(Dalek((55,150)),Dalek((105,150)),Dalek((155,150)),Dalek((128,200)),Dalek((340,375)),silenceorder((700,100)),silenceorder((750,150)),silenceorder((700,100)))
+	daleks.add(LeaderDalek((105,250)))
 	weapondaleks.add(SpecialWeaponsDalek((78,200)),SpecialWeaponsDalek((290,325)))
+	#mortar placement
+	#mortars.add(Mortar((200,600),(300,400),50))
 	#silence placement
 	silence.add(Silence((750,50)),Silence((750,100)),Silence((700,50)))
 	#cyber placement
@@ -2094,6 +2303,8 @@ elif level == "plot1":
 	#intro
 	print "Your next posting will be at the warfront. Welcome to the fourth time war. Report to the command tardis. From there you will be expected to knock out an assualt squadron of daleks overseeing the bombing of the area. Get to their leader."
 	time.sleep(5)
+	arena = False
+	arena2 = True
 	#NOTE: ALL THAT REMAINS TO BE PLACED IS DALEK AND ENVIRONMENT PLACEMENT
 	#dalek placement
 	speedydaleks.add(SpeedyDalek((320,150)),SpeedyDalek((370,150)))
@@ -2112,47 +2323,64 @@ elif level == "plot1":
 	bombs.add(Bomb((475,240)),Bomb((525,240)))
 	ventGates.add(VentGate((210,190)))
 	beamers.add(Beamer((160,325),(100,0)))
-	#angel placement
-	angels.add(WeepingAngel((610,610)),WeepingAngel((580,580)),WeepingAngel((610,640)),WeepingAngel((580,640)),WeepingAngel((640,580)))
-	#outpost outer wall
-	barriers.add(Wall((420,40)),Wall((420,90)),Wall((420,140)),Wall((420,190)),Wall((420,240)))
-	barriers.add(Wall((420,290)),Wall((420,340)),Wall((420,390)),Wall((420,440)),Wall((370,440)),Wall((320,440)),Wall((270,440)),Wall((220,440)),Wall((170,440)),Wall((120,440)),Wall((70,440)),Wall((20,440)))
-	#outpost interior rooms
-	barriers.add(Wall((210,40)),Wall((210,90)),Wall((210,140)),Wall((210,240)),Wall((210,290)),Wall((210,340)),Wall((210,390)),Wall((210,440)))
-	barriers.add(Wall((260,240)),Wall((310,240)),Wall((360,240)),Wall((410,240)),Wall((420,240)))
-	#outpost prison
-	barriers.add(Wall((490,40)),Wall((490,90)),Wall((490,140)),Wall((490,190)),Wall((540,190)),Wall((590,190)),Wall((590,140)),Wall((590,90)),Wall((590,40)))
-	#stone mine
-	barriers.add(StoneWall((700,700)),StoneWall((640,700)),StoneWall((580,700)),StoneWall((520,700)),StoneWall((520,640)),StoneWall((520,580)),StoneWall((520,520)),StoneWall((580,520)),StoneWall((640,520)),StoneWall((700,520)),StoneWall((700,580)),StoneWall((700,640)))
+	#hallway
+	#
+	#main building
+	#
 	#doctor, pond, rory, and tardis placement
-	doctor = Doctor((100,700))
+	doctor = Doctor((400,700))
 	doctors.add(doctor)
-	pond = Pond((50,750))
+	#isolated
+	pond = Pond((50,-1400))
 	ponds.add(pond)
-	rory = Rory((50,700))
+	rory = Rory((50,-1400))
 	rorys.add(rory)
-	tardis = Tardis((100,750))
+	#tardis
+	tardis = Tardis((100,-700))
 	tardises.add(tardis)
-	#RIFT
-	rifts.add(TimeRift((350,700),60,50000))
 	levelmsg = "Well done. You've succeeded. Enter the coordinates plot2_a69f into the command tardis console. This will take you to the main camp."
 else:
 	print "error: Specify proper coordinates. Standard is a good keyphrase to begin with."
 	raise RuntimeError
 
-#wall borders
-barriers.add(Wall((0,0),True),Wall((0,45),True),Wall((0,90),True),Wall((0,135),True),Wall((0,180),True),Wall((0,225),True),Wall((0,270),True),Wall((0,315),True),Wall((0,360),True))
-barriers.add(Wall((0,495),True),Wall((0,540),True),Wall((0,585),True))
-barriers.add(Wall((0,405),True),Wall((0,450),True),Wall((0,595),True),Wall((0,640),True),Wall((0,685),True),Wall((0,730),True),Wall((0,775),True),Wall((0,800),True))
-barriers.add(Wall((45,0),True),Wall((90,0),True),Wall((135,0),True),Wall((180,0),True),Wall((225,0),True),Wall((270,0),True),Wall((315,0),True),Wall((360,0),True))
-barriers.add(Wall((495,0),True),Wall((540,0),True),Wall((585,0),True))
-barriers.add(Wall((405,0),True),Wall((450,0),True),Wall((595,0),True),Wall((640,0),True),Wall((685,0),True),Wall((730,0),True),Wall((775,0),True),Wall((800,0),True))
-barriers.add(Wall((800,45),True),Wall((800,90),True),Wall((800,135),True),Wall((800,180),True),Wall((800,225),True),Wall((800,270),True),Wall((800,315),True),Wall((800,360),True))
-barriers.add(Wall((800,495)),Wall((800,540)),Wall((800,585)))
-barriers.add(Wall((800,405)),Wall((800,450)),Wall((800,595)),Wall((800,640)),Wall((800,685)),Wall((800,730)),Wall((800,775)),Wall((800,800)))
-barriers.add(Wall((45,800)),Wall((90,800)),Wall((135,800)),Wall((180,800)),Wall((225,800)),Wall((270,800)),Wall((315,800)),Wall((360,800)))
-barriers.add(Wall((495,800)),Wall((540,800)),Wall((585,800)))
-barriers.add(Wall((405,800)),Wall((450,800)),Wall((595,800)),Wall((640,800)),Wall((685,800)),Wall((730,800)),Wall((775,800)),Wall((800,800)))
+if arena:
+	#wall borders
+	barriers.add(Wall((0,0),True),Wall((0,45),True),Wall((0,90),True),Wall((0,135),True),Wall((0,180),True),Wall((0,225),True),Wall((0,270),True),Wall((0,315),True),Wall((0,360),True))
+	barriers.add(Wall((0,495),True),Wall((0,540),True),Wall((0,585),True))
+	barriers.add(Wall((0,405),True),Wall((0,450),True),Wall((0,595),True),Wall((0,640),True),Wall((0,685),True),Wall((0,730),True),Wall((0,775),True),Wall((0,800),True))
+	barriers.add(Wall((45,0),True),Wall((90,0),True),Wall((135,0),True),Wall((180,0),True),Wall((225,0),True),Wall((270,0),True),Wall((315,0),True),Wall((360,0),True))
+	barriers.add(Wall((495,0),True),Wall((540,0),True),Wall((585,0),True))
+	barriers.add(Wall((405,0),True),Wall((450,0),True),Wall((595,0),True),Wall((640,0),True),Wall((685,0),True),Wall((730,0),True),Wall((775,0),True),Wall((800,0),True))
+	barriers.add(Wall((800,45),True),Wall((800,90),True),Wall((800,135),True),Wall((800,180),True),Wall((800,225),True),Wall((800,270),True),Wall((800,315),True),Wall((800,360),True))
+	barriers.add(Wall((800,495),True),Wall((800,540),True),Wall((800,585),True))
+	barriers.add(Wall((800,405),True),Wall((800,450),True),Wall((800,595),True),Wall((800,640),True),Wall((800,685),True),Wall((800,730),True),Wall((800,775),True),Wall((800,800),True))
+	barriers.add(Wall((45,800),True),Wall((90,800),True),Wall((135,800),True),Wall((180,800),True),Wall((225,800),True),Wall((270,800),True),Wall((315,800),True),Wall((360,800),True))
+	barriers.add(Wall((495,800),True),Wall((540,800),True),Wall((585,800),True))
+	barriers.add(Wall((405,800),True),Wall((450,800),True),Wall((595,800),True),Wall((640,800),True),Wall((685,800),True),Wall((730,800),True),Wall((775,800),True),Wall((800,800),True))
+elif arena2:
+	#wall borders
+	#right bottom wall
+	barriers.add(Wall((0,0),True),Wall((0,-45),True),Wall((0,-90),True),Wall((0,-135),True),Wall((0,-180),True),Wall((0,-225),True),Wall((0,-270),True),Wall((0,-315),True),Wall((0,-360),True))
+	barriers.add(Wall((0,-495),True),Wall((0,-540),True),Wall((0,-585),True))
+	barriers.add(Wall((0,-405),True),Wall((0,-450),True),Wall((0,-595),True),Wall((0,-640),True),Wall((0,-685),True),Wall((0,-730),True),Wall((0,-775),True),Wall((0,-800),True))
+	#left bottom wall
+	barriers.add(Wall((800,0),True),Wall((800,-45),True),Wall((800,-90),True),Wall((800,-135),True),Wall((800,-180),True),Wall((800,-225),True),Wall((800,-270),True),Wall((800,-315),True),Wall((800,-360),True))
+	barriers.add(Wall((800,-495),True),Wall((800,-540),True),Wall((800,-585),True))
+	barriers.add(Wall((800,-405),True),Wall((800,-450),True),Wall((800,-595),True),Wall((800,-640),True),Wall((800,-685),True),Wall((800,-730),True),Wall((800,-775),True),Wall((800,-800),True))
+	#bottom wall
+	barriers.add(Wall((45,-800),True),Wall((90,-800),True),Wall((135,-800),True),Wall((180,-800),True),Wall((225,-800),True),Wall((270,-800),True),Wall((315,-800),True),Wall((360,-800),True))
+	barriers.add(Wall((495,-800),True),Wall((540,-800),True),Wall((585,-800),True))
+	barriers.add(Wall((405,-800),True),Wall((450,-800),True),Wall((595,-800),True),Wall((640,-800),True),Wall((685,-800),True),Wall((730,-800),True),Wall((775,-800),True),Wall((800,-800),True))
+	#new above
+	barriers.add(Wall((0,0),True),Wall((0,45),True),Wall((0,90),True),Wall((0,135),True),Wall((0,180),True),Wall((0,225),True),Wall((0,270),True),Wall((0,315),True),Wall((0,360),True))
+	barriers.add(Wall((0,495),True),Wall((0,540),True),Wall((0,585),True))
+	barriers.add(Wall((0,405),True),Wall((0,450),True),Wall((0,595),True),Wall((0,640),True),Wall((0,685),True),Wall((0,730),True),Wall((0,775),True),Wall((0,800),True))
+	barriers.add(Wall((800,45),True),Wall((800,90),True),Wall((800,135),True),Wall((800,180),True),Wall((800,225),True),Wall((800,270),True),Wall((800,315),True),Wall((800,360),True))
+	barriers.add(Wall((800,495),True),Wall((800,540),True),Wall((800,585),True))
+	barriers.add(Wall((800,405),True),Wall((800,450),True),Wall((800,595),True),Wall((800,640),True),Wall((800,685),True),Wall((800,730),True),Wall((800,775),True),Wall((800,800),True))
+	barriers.add(Wall((45,800),True),Wall((90,800),True),Wall((135,800),True),Wall((180,800),True),Wall((225,800),True),Wall((270,800),True),Wall((315,800),True),Wall((360,800),True))
+	barriers.add(Wall((495,800),True),Wall((540,800),True),Wall((585,800),True))
+	barriers.add(Wall((405,800),True),Wall((450,800),True),Wall((595,800),True),Wall((640,800),True),Wall((685,800),True),Wall((730,800),True),Wall((775,800),True),Wall((800,800),True))
 
 def PossibleReconsrtruct():
 	variable = random.randint(1,700)
@@ -2184,10 +2412,67 @@ pygame.display.update(cybers.draw((screen)))
 pygame.display.update(silence.draw((screen)))
 pygame.display.update(beamers.draw((screen)))
 pygame.display.update(rifts.draw((screen)))
+pygame.display.update(mortars.draw((screen)))
 echoHealth = False
+
+on = [False,None,None]
+counting = 5
+screeny = [0,800,0,800]
+doctorx = doctor.rect.x
+doctory = doctor.rect.y
+doctorx2 = doctor.rect.x
+doctory2 = doctor.rect.y
 
 print regen
 while True:
+	doctorx -= (doctorx2 - doctor.rect.x)
+	doctory -= (doctory2 - doctor.rect.y)
+	doctorx2 = doctor.rect.x
+	doctory2 = doctor.rect.y
+	every = pygame.sprite.RenderUpdates()
+	every.add(doctors,daleks,barriers,reactors,bombs,crates,tardises,weapondaleks,civilians,ponds,speedydaleks,angels,rorys,cybers,silence,beamers,rifts,mortars)
+	print counting, screeny, on, doctorx, doctory, doctor.rect.x, doctor.rect.y
+	#'''
+	if on[0] == False:
+		if doctorx < screeny[0]:
+			on = [True,'x',(48,0)]
+		elif doctorx > screeny[1]:
+			on = [True,'x',(-48,0)]
+		elif doctory < screeny[2]:
+			on = [True,'y',(0,48)]
+		elif doctory > screeny[3]:
+			on = [True,'y',(0,-48)]
+	else:
+		counting -= 1
+		if on[1] == 'x':
+			screeny[0] += -1*on[2][0]
+			screeny[1] += -1*on[2][1]
+			screeny[1] += on[2][0]
+			screeny[0] += on[2][1]
+			doctorx += -1*on[2][0]
+		elif on[1] == 'y':
+			screeny[2] += -1*on[2][0]
+			screeny[3] += -1*on[2][1]
+			screeny[3] += on[2][0]
+			screeny[2] += on[2][1]
+			doctory += -1*on[2][1]
+		else:
+			print "not x or y???"
+			raise RuntimeError
+		for item in every:
+			screen.fill((150,150,200),item.rect)
+			item.rect.move_ip(on[2])
+			if item in ventGates:
+				item.move(on[2])
+		if counting == 0:
+			screen.fill((150,150,200))
+			pygame.display.update(every.draw((screen)))
+			pygame.display.update(barriers.draw((screen)))
+			pygame.display.update(reactors.draw((screen)))
+			pygame.display.update(bombs.draw((screen)))
+			counting = 10
+			on = [False,None,None]
+	#'''
 	#projectiles2 = projectiles
 	daleks.update()
 	weapondaleks.update()
@@ -2210,6 +2495,7 @@ while True:
 	cybers.update(everything7)
 	silence.update(everything7)
 	beamers.update()
+	mortars.update()
 	for unit in units2:
 		for rift in rifts:
 			if unit.rangeTo(rift) < 130:
@@ -2225,7 +2511,7 @@ while True:
 			stamina += 1
 	time.sleep(0.04)
 	if regen < 900:
-		#regen = regen + 10
+		regen = regen + 50
 		regen = regen + .4
 	pygame.display.update(daleks.draw(screen))
 	pygame.display.update(doctors.draw(screen))
@@ -2247,6 +2533,7 @@ while True:
 	pygame.display.update(silence.draw((screen)))
 	pygame.display.update(beamers.draw((screen)))
 	pygame.display.update(rifts.draw((screen)))
+	pygame.display.update(mortars.draw((screen)))
 	rifts.update(units)
 	PossibleReconsrtruct()
 	for boom in booms:
