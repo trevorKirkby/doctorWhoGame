@@ -2,6 +2,11 @@
 
 import pygame, time, math, random, sys
 
+#
+#SPEED constant, the amount of wait for each round. Calibrate it how you like, 0.04 is a good one in general but you may want to change it.
+SPEED = 0.05
+#
+
 text1 = "Right, here are the rules. Use the arrow keys to control your movement. As the name implies, you control the doctor. You also have three other controls. F will make you move faster, but only for so long and then you must wait before sprinting again. S will use the sonic screwdriver, which interacts in various ways with the environment, closing gates and detonating things. H will heal you should you become injured, however, this uses up energy that you could also use to regenorate at the tardis if you are very badly injured. There are daleks, which will shoot you, special weapons versions, which have explosive projectiles that could be used to your advantage, and versions that are much faster and more deadly that have projectiles that only harm you, however a single shot from one such projectile will end the game. There are also silence, which will influence enemies to move towards you, cybermen, which are fast and destructive, and weeping angels, which will kill anything it can see if noone sees it. Coming soon are members of the order of the silence and the master. Good luck."
 
 text = text1.split()
@@ -807,12 +812,20 @@ class LeaderDalek(Moveable):
 		Moveable.__init__(self,pos,"dalekleader.png")
 		self.deathbolt = None
 		leaders.add(self)
+		self.count = 50
+		self.doctorpast = [doctor.rect.center,doctor.rect.center,doctor.rect.center,doctor.rect.center,doctor.rect.center,doctor.rect.center,doctor.rect.center,doctor.rect.center,doctor.rect.center,doctor.rect.center,doctor.rect.center,doctor.rect.center,doctor.rect.center,doctor.rect.center,doctor.rect.center,doctor.rect.center,doctor.rect.center,doctor.rect.center,doctor.rect.center,doctor.rect.center,doctor.rect.center,doctor.rect.center,doctor.rect.center]
 	def update(self):
+		self.doctorpast.append(doctor.rect.center)
+		self.doctorpast = self.doctorpast[1:]
+		self.count -= 1
+		if self.count == 0:
+			self.count = 50
 		if self.rangeTo(doctor) < 460:
 			self.move(*self.moveRelative(doctor,1))
 		for item in mortars:
 			if self.rangeTo(item) < 70:
-				item.target = doctor.rect.center
+				if self.count < 5:
+					item.target = self.doctorpast[0]
 			elif self.rangeTo(item) < 150:
 				self.move(*self.moveRelative(item,2))
 		for item in daleks:
@@ -2299,49 +2312,147 @@ elif level == "setup1":
 	levelmsg = "Well done. You just completed the coordinates setup1, the standard layout. The next sequential setup will be setup2_989. This is likely to be available in the next update. Type arena for the only other completed setup. Though I doubt you will invest this much time in this thing, I may later encorporate some greater form of progression that will grant you a few choices in the doctor's controls and stuff."
 elif level == "plot1":
 	#NEW SETUP ------------------------------------- NEW SETUP ---------------------------------------- NEW SETUP
-	#time rifts: note: to units, rifts will suck them in and kill them, even angels. angels can also be killed by two simultaneous explosions. to other things, like sonics, death rays, and heal rays, it will transport them a certain amount into the future, by a number seen on the rift. This gives a mirror and delay. And, ofcoarse, a rift could possibly have certain times it is present or not, and a unit will keep it to occupied to suck in other units for a few seconds. There is such a thing as a rift explosion, which is a larger, short lived time rift. Regenoration blasts will heal allies, push all enemies, have roughly a fifty percent chance of destroying a wall it passes through, and could possibly explode which would kill enemies, could possibly cause a small rift explosion, or could possibly kill an enemy. It will also, of coarse, have a chance of just pushing them. This depends partly upon the enemy, partly upon randomness, and partly upon later progression. They can also supressively implode volatile map components.
+	#PLOT 1     PLOT 1     PLOT 1     PLOT 1     PLOT 1     PLOT 1     PLOT 1     PLOT 1     PLOT 1     PLOT 1     PLOT 1
+	#unlockables: secondary screwdriver, gadget, physic paper, regenoration powers, regenoration manipulators, vortex manipulator, time energy bolt, tardis sheilds, tardis stasis emissions, regen heal, regen sprint, regen heal/protect other, regen bolt, regenbolt powers, timebolt powers, regenwall, regenpush, regensheild, regensonic, regentime, perceptionfilter, build(spend time to turn say a ventgate into a teleporter, or a crate into a mortar), hack some electronic sprites(difficult but could theoretically use a very diverse amount of new functions especially when combined with build), 
 	#intro
 	print "Your next posting will be at the warfront. Welcome to the fourth time war. Report to the command tardis. From there you will be expected to knock out an assualt squadron of daleks overseeing the bombing of the area. Get to their leader."
-	time.sleep(5)
-	arena = False
-	arena2 = True
-	#NOTE: ALL THAT REMAINS TO BE PLACED IS DALEK AND ENVIRONMENT PLACEMENT
-	#dalek placement
-	speedydaleks.add(SpeedyDalek((320,150)),SpeedyDalek((370,150)))
-	daleks.add(Dalek((55,150)),Dalek((105,150)),Dalek((155,150)),Dalek((128,200)),Dalek((340,375)),silenceorder((700,100)),silenceorder((750,150)),silenceorder((700,100)))
-	weapondaleks.add(SpecialWeaponsDalek((78,200)),SpecialWeaponsDalek((290,325)))
-	#silence placement
-	silence.add(Silence((750,50)),Silence((750,100)),Silence((700,50)))
-	#cyber placement
-	cybers.add(cyberman((375,600)),cyberman((300,600)))
-	#civilian placement
-	civilians.add(Civilian((540,40)),Civilian((540,90)),Civilian((650,50)),Civilian((750,200)),Civilian((100,600)),Civilian((50,600)))
-	#environment placement
-	crates.add(Crate((320,100)),Crate((370,100)))
-	reactors.add(Reactor((125,385)),Reactor((370,340)),Reactor((370,390)))
-	bombs.add(Bomb((55,100)),Bomb((105,100)),Bomb((155,100)))
-	bombs.add(Bomb((475,240)),Bomb((525,240)))
-	ventGates.add(VentGate((210,190)))
-	beamers.add(Beamer((160,325),(100,0)))
-	#hallway
-	#
-	#main building
-	#
-	#doctor, pond, rory, and tardis placement
-	doctor = Doctor((400,-700))
+	#doctor
+	doctor = Doctor((400,750))
 	doctors.add(doctor)
+	#dalek placement
+	daleks.add(Dalek((50,100)),Dalek((100,100)),Dalek((150,100)),Dalek((200,100)),Dalek((250,100)),Dalek((300,100)),Dalek((350,100)),Dalek((400,100)),Dalek((450,100)),Dalek((500,100)),Dalek((550,100)))
+	daleks.add(LeaderDalek((400,200)))
+	#main building
+	for thing in range(8):
+		barriers.add(Wall((random.choice(range(600)[100:]),random.choice(range(700)[300:]))))
+	#hallway
+	barriers.add(StoneWall((650,150),True),StoneWall((650,200)),StoneWall((650,250),True),StoneWall((650,300)),StoneWall((650,350),True))
+	#environment placement
+	for thing in range(random.choice(range(10))):
+		crate = Crate((random.choice(range(600)[100:]),random.choice(range(700)[300:])))
+		stuff = True
+		things = pygame.sprite.spritecollide(crate, barriers, False)
+                for other in things:
+	                if other != crate:
+				stuff = False
+		things = pygame.sprite.spritecollide(crate, reactors, False)
+                for other in things:
+	                if other != crate:
+				stuff = False
+		things = pygame.sprite.spritecollide(crate, bombs, False)
+                for other in things:
+	                if other != crate:
+				stuff = False
+		things = pygame.sprite.spritecollide(crate, ventGates, False)
+                for other in things:
+	                if other != crate:
+				stuff = False
+		if stuff == True:
+			crates.add(crate)
+	for thing in range(random.choice(range(6))):
+		beamer = Reactor((random.choice(range(600)[100:]),random.choice(range(700)[300:])))
+		things = pygame.sprite.spritecollide(beamer, barriers, False)
+                for other in things:
+	                if other != beamer:
+				stuff = False
+		things = pygame.sprite.spritecollide(beamer, reactors, False)
+                for other in things:
+	                if other != beamer:
+				stuff = False
+		things = pygame.sprite.spritecollide(beamer, bombs, False)
+                for other in things:
+	                if other != beamer:
+				stuff = False
+		things = pygame.sprite.spritecollide(beamer, ventGates, False)
+                for other in things:
+	                if other != beamer:
+				stuff = False
+		if stuff == True:
+			reactors.add(beamer)
+	for thing in range(random.choice(range(10))):
+		bomb = Bomb((random.choice(range(600)[100:]),random.choice(range(700)[300:])))
+		stuff = True
+		things = pygame.sprite.spritecollide(bomb, barriers, False)
+                for other in things:
+	                if other != bomb:
+				stuff = False
+		things = pygame.sprite.spritecollide(bomb, reactors, False)
+                for other in things:
+	                if other != bomb:
+				stuff = False
+		things = pygame.sprite.spritecollide(bomb, bombs, False)
+                for other in things:
+	                if other != bomb:
+				stuff = False
+		things = pygame.sprite.spritecollide(bomb, ventGates, False)
+                for other in things:
+	                if other != bomb:
+				stuff = False
+		if stuff == True:
+			bombs.add(bomb)
+	for thing in range(random.choice(range(3))):
+		beamer = VentGate((random.choice(range(600)[100:]),random.choice(range(700)[300:])))
+		things = pygame.sprite.spritecollide(beamer, barriers, False)
+                for other in things:
+	                if other != beamer:
+				stuff = False
+		things = pygame.sprite.spritecollide(beamer, reactors, False)
+                for other in things:
+	                if other != beamer:
+				stuff = False
+		things = pygame.sprite.spritecollide(beamer, bombs, False)
+                for other in things:
+	                if other != beamer:
+				stuff = False
+		things = pygame.sprite.spritecollide(beamer, ventGates, False)
+                for other in things:
+	                if other != beamer:
+				stuff = False
+		if stuff == True:
+			ventGates.add(beamer)
+	for thing in range(random.choice(range(10))):
+		beamer = Beamer((random.choice(range(600)[100:]),random.choice(range(700)[300:])),(random.choice(range(100)[50:]),random.choice(range(100)[50:])))
+                stuff = True
+		things = pygame.sprite.spritecollide(beamer, barriers, False)
+                for other in things:
+	                if other != beamer:
+				stuff = False
+		things = pygame.sprite.spritecollide(beamer, reactors, False)
+                for other in things:
+	                if other != beamer:
+				stuff = False
+		things = pygame.sprite.spritecollide(beamer, bombs, False)
+                for other in things:
+	                if other != beamer:
+				stuff = False
+		things = pygame.sprite.spritecollide(beamer, ventGates, False)
+                for other in things:
+	                if other != beamer:
+				stuff = False
+		if stuff == True:
+			beamers.add(beamer)
+	mortars.add(Mortar((400,50),(random.choice(range(600)[100:]),random.choice(range(700)[350:])),random.choice(range(90)[20:])))
+	mortars.add(Mortar((300,50),(random.choice(range(600)[100:]),random.choice(range(700)[350:])),random.choice(range(90)[20:])))
+	mortars.add(Mortar((500,50),(random.choice(range(600)[100:]),random.choice(range(700)[350:])),random.choice(range(90)[20:])))
+	mortars.add(Mortar((200,50),(random.choice(range(600)[100:]),random.choice(range(700)[350:])),random.choice(range(90)[20:])))
+	mortars.add(Mortar((600,50),(random.choice(range(600)[100:]),random.choice(range(700)[350:])),random.choice(range(90)[20:])))
+	mortars.add(Mortar((700,50),(random.choice(range(600)[100:]),random.choice(range(700)[350:])),random.choice(range(90)[20:])))
+	mortars.add(Mortar((100,50),(random.choice(range(600)[100:]),random.choice(range(700)[350:])),random.choice(range(90)[20:])))
+	#pond, rory, and tardis placement
 	#isolated
 	pond = Pond((50,-1400))
 	ponds.add(pond)
 	rory = Rory((50,-1400))
 	rorys.add(rory)
 	#tardis
-	tardis = Tardis((100,-700))
+	tardis = Tardis((300,750))
 	tardises.add(tardis)
 	levelmsg = "Well done. You've succeeded. Enter the coordinates plot2_a69f into the command tardis console. This will take you to the main camp."
 else:
 	print "error: Specify proper coordinates. Standard is a good keyphrase to begin with."
 	raise RuntimeError
+
+#ARENA SETUPS--------------->->->->------------
 
 if arena:
 	#wall borders
@@ -2431,7 +2542,7 @@ while True:
 	doctory2 = doctor.rect.y
 	every = pygame.sprite.RenderUpdates()
 	every.add(doctors,daleks,barriers,reactors,bombs,crates,tardises,weapondaleks,civilians,ponds,speedydaleks,angels,rorys,cybers,silence,beamers,rifts,mortars)
-	print counting, screeny, on, doctorx, doctory, doctor.rect.x, doctor.rect.y
+	#print counting, screeny, on, doctorx, doctory, doctor.rect.x, doctor.rect.y
 	#'''
 	if on[0] == False:
 		if doctorx < screeny[0]:
@@ -2509,7 +2620,7 @@ while True:
 	if health > 5:
 		if stamina < 350:
 			stamina += 1
-	time.sleep(0.04)
+	time.sleep(SPEED)
 	if regen < 900:
 		regen = regen + 50
 		regen = regen + .4
