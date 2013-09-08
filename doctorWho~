@@ -5,6 +5,7 @@ import pygame, time, math, random, sys
 #
 #SPEED constant, the amount of wait for each round. Calibrate it how you like, 0.04 is a good one in general but you may want to change it.
 SPEED = 0.05
+COLOR = (150,150,200)
 #
 
 text1 = "Right, here are the rules. Use the arrow keys to control your movement. As the name implies, you control the doctor. You also have three other controls. F will make you move faster, but only for so long and then you must wait before sprinting again. S will use the sonic screwdriver, which interacts in various ways with the environment, closing gates and detonating things. H will heal you should you become injured, however, this uses up energy that you could also use to regenorate at the tardis if you are very badly injured. There are daleks, which will shoot you, special weapons versions, which have explosive projectiles that could be used to your advantage, and versions that are much faster and more deadly that have projectiles that only harm you, however a single shot from one such projectile will end the game. There are also silence, which will influence enemies to move towards you, cybermen, which are fast and destructive, and weeping angels, which will kill anything it can see if noone sees it. Coming soon are members of the order of the silence and the master. Good luck."
@@ -63,7 +64,9 @@ class Moveable(pygame.sprite.Sprite):
 		self.rect = self.image.get_rect()
 		self.rect.center = pos
 	def move(self,dx,dy):
-		screen.fill((150,150,200),self.rect)
+		#print COLOR
+		screen.fill((COLOR),self.rect)
+		#print COLOR
 		if dx > 0:
 			self.image = self.right
 			if self not in projectiles:
@@ -170,7 +173,7 @@ class Projectile(Moveable):
 		if self.delay > 0:
 			self.delay -= 1
 		else:
-			screen.fill((150,150,200),self.rect)
+			screen.fill((COLOR),self.rect)
 			self.destructCountDown = self.destructCountDown - 1
 			if self.destructCountDown == 0:
 				return False
@@ -194,7 +197,7 @@ class Explodable():
 		self.triggers = triggers
 		self.impermeable = True
 	def destruct(self):
-		screen.fill((150,150,200),self.rect)
+		screen.fill((COLOR),self.rect)
                 self.image = self.explosion
                 self.rect = self.image.get_rect()
                 self.rect.center = self.x
@@ -213,7 +216,7 @@ class Explodable():
 				self.countdown = self.countdown - 1
 			if self.countdown == 0:
 				damagers.remove(self)
-				screen.fill((150,150,200),self.rect)
+				screen.fill((COLOR),self.rect)
 				self.end()
 		return self.exploded
 
@@ -255,7 +258,7 @@ class Reactor(pygame.sprite.Sprite):
 		self.countdown = 6
 		self.impermeable = True
 	def destruct(self):
-		screen.fill((150,150,200),self.rect)
+		screen.fill((COLOR),self.rect)
                 self.image = self.boom
                 self.rect = self.image.get_rect()
                 self.rect.center = self.x
@@ -287,7 +290,7 @@ class Reactor(pygame.sprite.Sprite):
 				self.countdown = self.countdown - 1
 			if self.countdown == 0:
 				booms.remove(self)
-				screen.fill((150,150,200),self.rect)
+				screen.fill((COLOR),self.rect)
 				reactors.remove(self)
 		return self.exploded
 
@@ -304,7 +307,7 @@ class Bomb(pygame.sprite.Sprite):
                 self.exploded = False
                 self.countdown = 3
         def destruct(self):
-                screen.fill((150,150,200),self.rect)
+                screen.fill((COLOR),self.rect)
                 self.image = self.boom
                 self.rect = self.image.get_rect()
                 self.rect.center = self.x
@@ -336,7 +339,7 @@ class Bomb(pygame.sprite.Sprite):
                                 self.countdown = self.countdown - 1
                         else:
                                 booms.remove(self)
-                                screen.fill((150,150,200),self.rect)
+                                screen.fill((COLOR),self.rect)
                                 bombs.remove(self)
                 return self.exploded
 
@@ -356,7 +359,7 @@ class TimeRift(pygame.sprite.Sprite):
 		booms.add(self)
 		print count
         def update(self,others):
-		screen.fill((150,150,200),self.rect)
+		screen.fill((COLOR),self.rect)
 		for unit in others:
 			if unit.rangeTo(self) < 80:
 				unit.move(*unit.moveRelative(self,2))
@@ -374,7 +377,7 @@ class TimeRift(pygame.sprite.Sprite):
                 for other in collisions:
 	                if other != self:
 				if other in self.hist:
-					screen.fill((150,150,200),other.rect)
+					screen.fill((COLOR),other.rect)
 					self.count2 -= 1
 					if self.count2 < 3:
 						self.count2 = self.count
@@ -385,7 +388,7 @@ class TimeRift(pygame.sprite.Sprite):
 				else:
         	                 	x,y = other.direction
 					other.direction = (x*-1,y*-1)
-					screen.fill((150,150,200),other.rect)
+					screen.fill((COLOR),other.rect)
 					#self.saved.append(other.rect)
 					#self.saved.append(other.image)
 					#center = other.rect.center
@@ -408,7 +411,7 @@ class TimeRift(pygame.sprite.Sprite):
 	                self.countdown -= 1
                 else:
                      	booms.remove(self)
-                        screen.fill((150,150,200),self.rect)
+                        screen.fill((COLOR),self.rect)
                         rifts.remove(self)
 
 class Crate(pygame.sprite.Sprite):
@@ -424,7 +427,7 @@ class Crate(pygame.sprite.Sprite):
                 self.exploded = False
                 self.countdown = 3
         def destruct(self):
-                screen.fill((150,150,200),self.rect)
+                screen.fill((COLOR),self.rect)
                 self.image = self.boom
                 self.rect = self.image.get_rect()
                 self.rect.center = self.x
@@ -449,7 +452,7 @@ class Crate(pygame.sprite.Sprite):
                                 self.countdown = self.countdown - 1
                         if self.countdown == 0:
                                 booms.remove(self)
-                                screen.fill((150,150,200),self.rect)
+                                screen.fill((COLOR),self.rect)
                                 crates.remove(self)
                 return self.exploded
 
@@ -470,7 +473,7 @@ class BoomBolt(Moveable):
 		projectiles.add(self)
 		self.delay = 0
         def destruct(self):
-                screen.fill((150,150,200),self.rect)
+                screen.fill((COLOR),self.rect)
                 self.init2(self.rect.center,self.boom)
                 booms.add(self)
                 self.exploded = True
@@ -485,14 +488,14 @@ class BoomBolt(Moveable):
                                 self.countdown = self.countdown - 1
                         if self.countdown == 0:
                                 booms.remove(self)
-                                screen.fill((150,150,200),self.rect)
+                                screen.fill((COLOR),self.rect)
                                 boombolts.remove(self)
 		return self.exploded
 	def update(self):
 		if self.delay > 0:
 			self.delay -= 1
 			return
-		screen.fill((150,150,200),self.rect)
+		screen.fill((COLOR),self.rect)
 		self.destructCountDown = self.destructCountDown - 1
 		if self.destructCountDown == 0:
 			return False
@@ -623,9 +626,9 @@ class VentGate(pygame.sprite.Sprite):
 				else:
 					self.image = self.image1
 					everything.remove(self)
-					screen.fill((150,150,200),self.rect)
+					screen.fill((COLOR),self.rect)
 	def move(self,direction):
-		screen.fill((150,150,200),self.rect)
+		screen.fill((COLOR),self.rect)
 		self.rect.move_ip(direction)
 
 class Beamer(pygame.sprite.Sprite):
@@ -694,7 +697,7 @@ class DeathBolt(Moveable):
 		if self.delay > 0:
 			self.delay -= 1
 			return
-		screen.fill((150,150,200),self.rect)
+		screen.fill((COLOR),self.rect)
 		self.destructCountDown = self.destructCountDown - 1
 		if self.destructCountDown == 0:
 			return False
@@ -721,13 +724,23 @@ class DeathBolt(Moveable):
 			return True
 
 class Dalek(Moveable):
-	def __init__(self,pos):
+	def __init__(self,pos,deactivated=True):
 		Moveable.__init__(self,pos,"dalek.png")
 		self.deathbolt = None
 		self.paralyzed = False
 		self.terror = False
 		self.led = False
+		self.deactivated = deactivated
+		if self.deactivated == True:
+			self.paralyzed = True
+			self.deathbolt = returner()
+			self.mark = True
 	def update(self):
+		if self.deactivated == True:
+			if self.rangeTo(doctor) < 200:
+				self.deathbolt = None
+				self.paralyzed = False
+				self.deactivated = False
 		self.led = False
 		for leader in leaders:
 			if self.rangeTo(leader) < 250:
@@ -805,6 +818,7 @@ class Dalek(Moveable):
 				everything7.remove(self)
 				deathbolts.remove(self.deathbolt)
 				projectiles.remove(self.deathbolt)
+				screen.fill(COLOR,self.rect)
 				daleks.remove(self)
 
 class LeaderDalek(Moveable):
@@ -864,20 +878,29 @@ class LeaderDalek(Moveable):
 #Doom Angel: an angel with rigt powers. Can command other units, travel through rifts, make rifts, blast regenboltesque creations, control lights, move walls, make walls, lead angels, blow up silence, possess civilians, overload controls, and much more.
 
 class SpeedyDalek(Moveable):
-	def __init__(self,pos):
+	def __init__(self,pos,deactivated=False):
 		Moveable.__init__(self,pos,"speedydalek.png")
 		self.speedbolt = None
 		self.side = False
 		self.paralyzed = False
 		self.mark = False
 		self.led = False
+		self.deactivated = deactivated
+		if self.deactivated == True:
+			self.paralyzed = True
+			self.deathbolt = returner()
+			self.mark = True
 	def update(self):
 		self.led = False
 		for leader in leaders:
 			if self.rangeTo(leader) < 250:
 				self.led = True
 		if self.paralyzed == True:
-			pass
+			if self.deactivated == True:
+				if self.rangeTo(doctor) < 200:
+					self.deathbolt = None
+					self.paralyzed = False
+					self.deactivated = False
 		elif self.side != True:
 			if self.led == True:
 				if self.rangeTo(doctor) < 450:
@@ -933,7 +956,7 @@ class SpeedBolt(Moveable):
 		if self.delay > 0:
 			self.delay -= 1
 			return
-		screen.fill((150,150,200),self.rect)
+		screen.fill((COLOR),self.rect)
 		self.destructCountDown = self.destructCountDown - 1
 		if self.destructCountDown == 0:
 			return False
@@ -1026,6 +1049,7 @@ class WeepingAngel(Moveable):
 		self.timeLapse = 20
 		self.counter = 0
 	def update(self,sights):
+		screen.fill(COLOR,self.rect)
 		canattack = True
 		for part in sights:
 			direction = "right"
@@ -1108,7 +1132,7 @@ class cyberbolt(Moveable):
 		projectiles.add(self)
 		self.delay = 0
         def destruct(self):
-                screen.fill((150,150,200),self.rect)
+                screen.fill((COLOR),self.rect)
                 self.init2(self.rect.center,self.boom)
                 booms.add(self)
                 self.exploded = True
@@ -1123,14 +1147,14 @@ class cyberbolt(Moveable):
                                 self.countdown = self.countdown - 1
                         if self.countdown == 0:
                                 booms.remove(self)
-                                screen.fill((150,150,200),self.rect)
+                                screen.fill((COLOR),self.rect)
                                 boombolts.remove(self)
 		return self.exploded
 	def update(self):
 		if self.delay > 0:
 			self.delay -= 1
 			return
-		screen.fill((150,150,200),self.rect)
+		screen.fill((COLOR),self.rect)
 		self.destructCountDown = self.destructCountDown - 1
 		if self.destructCountDown == 0:
 			return False
@@ -1197,8 +1221,9 @@ class MortarShell(Moveable):
 		self.boom = "plasmaboom.png"
 		self.exploded = False
                 self.countdown = 5
+		booms.remove(self)
         def destruct(self):
-                screen.fill((150,150,200),self.rect)
+                screen.fill((COLOR),self.rect)
                 self.init2(self.rect.center,self.boom)
                 booms.add(self)
                 self.exploded = True
@@ -1212,19 +1237,21 @@ class MortarShell(Moveable):
                         if self.countdown > 0:
                                 self.countdown = self.countdown - 1
                         if self.countdown == 0:
-                                self.destruct()
+                                #self.destruct()
+				booms.remove(self)
 		return self.exploded
 	def update(self):
 		#print self.index
-		screen.fill((150,150,200),self.rect)
+		screen.fill((COLOR),self.rect)
 		self.destructCountDown = self.destructCountDown - 1
-		screen.fill((150,150,200),self.rect)
+		screen.fill((COLOR),self.rect)
                 self.init2(self.rect.center,self.imgs[self.index])
 		if self.destructCountDown < 7:
 			self.destruct()
 		else:
 			self.index += 1
 		if self.destructCountDown == 0:
+			booms.remove(self)
 			return False
 		else:
 			return True
@@ -1275,7 +1302,7 @@ class silencebolt(Moveable):
 		if self.delay > 0:
 			self.delay -= 1
 			return
-		screen.fill((150,150,200),self.rect)
+		screen.fill((COLOR),self.rect)
 		self.destructCountDown = self.destructCountDown - 1
 		if self.destructCountDown == 0:
 			return False
@@ -1525,7 +1552,7 @@ class sonicWave(Moveable):
 		if self.delay > 0:
 			self.delay -= 1
 			return True
-		screen.fill((150,150,200),self.rect)
+		screen.fill((COLOR),self.rect)
 		self.destructCountDown = self.destructCountDown - 1
 		if self.destructCountDown == 0:
 			return False
@@ -1550,11 +1577,121 @@ class sonicWave(Moveable):
 					self.destructCountDown = 1
 			return True
 
+class electricWave(Moveable):
+	def __init__(self,pos,direction):
+		Moveable.__init__(self,pos,"electroBolt.png")
+		self.destructCountDown = 45
+		self.direction = direction
+		if abs(self.direction[1]) > abs(self.direction[0]):
+			self.image = self.vertical
+			self.rect = self.image.get_rect()
+			self.rect.center = pos
+		projectiles.add(self)
+		self.delay = 0
+		self.nextTo = False
+	def update(self):
+		if self.delay > 0:
+			self.delay -= 1
+			return True
+		if self.nextTo == False:
+			for dalek in projectiles:
+				if self.rangeTo(dalek) < 120 and dalek != self:
+					self.nextTo = [True,dalek]
+			for dalek in daleks:
+				if self.rangeTo(dalek) < 120:
+					self.nextTo = [True,dalek]
+			for dalek in weapondaleks:
+				if self.rangeTo(dalek) < 120:
+					self.nextTo = [True,dalek]
+			for dalek in speedydaleks:
+				if self.rangeTo(dalek) < 120:
+					self.nextTo = [True,dalek]
+		screen.fill((COLOR),self.rect)
+		self.destructCountDown = self.destructCountDown - 1
+		if self.destructCountDown == 0:
+			return False
+		else:
+			if self.nextTo != False:
+				self.rect.move_ip(*self.direction)
+				self.rect.move_ip(*self.direction)
+				self.rect.move_ip(*self.direction)
+				self.rect.move_ip(*self.direction)
+				self.rect.move_ip(*self.direction)
+			else:
+				self.move(*self.moveRelative(nextTo[1]),10)
+			collisions = pygame.sprite.spritecollide(self, projectiles, False)
+			for other in collisions:
+				if other != self:
+					other.destructCountDown = 1
+			collisions = pygame.sprite.spritecollide(self, daleks, False)
+			for other in collisions:
+				if other != self:
+					other.paralyzed = True
+			collisions = pygame.sprite.spritecollide(self, speedydaleks, False)
+			for other in collisions:
+				if other != self:
+					other.paralyzed = True
+			collisions = pygame.sprite.spritecollide(self, weapondaleks, False)
+			for other in collisions:
+				if other != self:
+					other.paralyzed = True
+			collisions = pygame.sprite.spritecollide(self, ventGates, False)
+			for other in collisions:
+				if other != self:
+					self.destructCountDown = 0
+			collisions = pygame.sprite.spritecollide(self, reactors, False)
+			for other in collisions:
+				if other != self:
+					self.destructCountDown = 0
+			collisions = pygame.sprite.spritecollide(self, barriers, False)
+			for other in collisions:
+				if other != self:
+					self.destructCountDown = 0
+			return True
+
 class returner():
 	def __init__(thing):
 		pass
 	def update(thing):
 		return True
+
+class regun(Moveable):
+	def __init__(self,pos,direction):
+		Moveable.__init__(self,pos,"regenbolt.png")
+		self.destructCountDown = 14
+		self.direction = direction
+		if abs(self.direction[1]) > abs(self.direction[0]):
+			self.image = self.vertical
+			self.rect = self.image.get_rect()
+			self.rect.center = pos
+		projectiles.add(self)
+		self.delay = 0
+	def update(self):
+		if self.destructCountDown == 9:
+			booms.add(self)
+		if self.delay > 0:
+			self.delay -= 1
+			return
+		screen.fill((COLOR),self.rect)
+		self.destructCountDown = self.destructCountDown - 1
+		if self.destructCountDown == 0:
+			return False
+		else:
+			self.rect.move_ip(*self.direction)
+			self.rect.move_ip(*self.direction)
+			collisions = pygame.sprite.spritecollide(self, daleks, False)
+			for other in collisions:
+				if other != self:
+					daleks.remove(other)
+					everything.remove(other)
+					everything2.remove(other)
+					everything7.remove(other)
+					deathbolts.remove(other.deathbolt)
+			collisions = pygame.sprite.spritecollide(self, angels, False)
+			for other in collisions:
+				if other != self:
+					other.move(*other.moveRelative(doctor,-5))
+			return True
 
 class regenbolt(Moveable):
 	def __init__(self,pos,direction):
@@ -1570,7 +1707,7 @@ class regenbolt(Moveable):
 		self.delay = 0
 	def update(self):
 		self.destructCountDown = self.destructCountDown - 1
-		screen.fill((150,150,200),self.rect)
+		screen.fill((COLOR),self.rect)
 		if self.destructCountDown == 0:
 			return False
 		if self.delay > 0:
@@ -2040,6 +2177,8 @@ class Doctor(Moveable):
 		self.thingUp = False
 		self.sonicKey = False
 		self.regenbolt = False
+		self.gun = False
+		self.alternateKey = False
 		self.d = "blegh!"
 		self.sonicWave = None
 		self.healing = False
@@ -2050,6 +2189,8 @@ class Doctor(Moveable):
 		self.energy = 300
 		self.bolt = None
 		self.rbolt = None
+		self.rgun = None
+		self.elecbolt = False
 	def update(self):
 		for item in pygame.event.get():
 			if item.type == pygame.KEYDOWN and item.key == 275:
@@ -2092,6 +2233,15 @@ class Doctor(Moveable):
 				self.regenbolt = True
 			if item.type == pygame.KEYUP and item.key == pygame.K_r:
 				self.regenbolt = False
+			if item.type == pygame.KEYDOWN and item.key == pygame.K_d:
+				if regengun == True:
+					self.gun = True
+			if item.type == pygame.KEYUP and item.key == pygame.K_d:
+				self.gun = False
+			if item.type == pygame.KEYDOWN and item.key == pygame.K_a:
+				self.alternateKey = True
+			if item.type == pygame.KEYUP and item.key == pygame.K_a:
+				self.alternateKey = False
 			if item.type == pygame.KEYUP and item.key == pygame.K_i:
 				print 'saved', saved, 'dead', dead, 'health', health, 'regenoration energy', regen
 		if self.thingRight == True:
@@ -2145,6 +2295,7 @@ class Doctor(Moveable):
 		for other in collisionsb:
 			if other != self and other != self.bolt:
 				health = health -4
+				print "boom collision"
 		return health
 	def heal(self, health, regen):
 		rtn = [health,regen]
@@ -2171,6 +2322,15 @@ class Doctor(Moveable):
 			direction = self.d
 			self.sonicWave = sonicWave(self.rect.center,direction)
 			sonics.add(self.sonicWave)
+		if self.elecbolt:
+			if self.elecbolt.update() == False:
+				sonics.remove(self.elecbolt)
+				projectiles.remove(self.elecbolt)
+				self.elecbolt = None
+		elif self.alternateKey == True and electro = True:
+			direction = self.d
+			self.elecbolt = electroWave(self.rect.center,direction)
+			sonics.add(self.elecbolt)
 		if self.rbolt:
 			if self.rbolt.update() == False:
 				sonics.remove(self.rbolt)
@@ -2181,10 +2341,21 @@ class Doctor(Moveable):
 			self.rbolt = regenbolt(self.rect.center,direction)
 			sonics.add(self.rbolt)
 			regen -= 600
+		if self.rgun:
+			if self.rgun.update() == False:
+				sonics.remove(self.rgun)
+				projectiles.remove(self.rgun)
+				booms.remove(self.rgun)
+				self.rgun = None
+		elif self.gun == True and regen > 300:
+			direction = self.d
+			self.rgun = regun(self.rect.center,direction)
+			sonics.add(self.rgun)
+			regen -= 300
 		return regen
 pygame.init()
 screen = pygame.display.set_mode((800,800))
-screen.fill((150,150,200))
+screen.fill((COLOR))
 pygame.display.update()
 daleks = pygame.sprite.RenderUpdates()
 speedydaleks = pygame.sprite.RenderUpdates()
@@ -2216,6 +2387,8 @@ projectiles2 = projectiles
 
 arena = True
 arena2 = False
+regengun = False
+stone = False
 
 if level == '':
 	level = 'setup1'
@@ -2223,6 +2396,9 @@ if level == '':
 if level == "standard":
 	#intro
 	print "Be ready to deal with a large squad of daleks and a rogue weeping angel... And, of coarse, to protect civilians, amy, and rory."
+	#Doctor
+	doctor = Doctor((500,600))
+	doctors.add(doctor)
 	#dalek placement
 	speedydaleks.add(SpeedyDalek((150,300)),SpeedyDalek((150,600)))
 	daleks.add(Dalek((100,200)),Dalek((300,500)),Dalek((300,700)),Dalek((500,100)),Dalek((300,100)),silenceorder((200,50)),silenceorder((250,100)),silenceorder((300,150)))
@@ -2248,8 +2424,6 @@ if level == "standard":
 	barriers.add(Wall((725,250)),Wall((430,709)),Wall((409,612)),Wall((400,45)),Wall((400,90)),Wall((400,135)),Wall	((400,180)),Wall((400,225)),Wall((400,270)),Wall((400,315)),Wall((400,360)))
 	barriers.add(Wall((445,360)),Wall((490,360)),Wall((535,360)),Wall((570,360)),Wall((615,360)),Wall((715,360)),Wall((750,360)),Wall((795,360)))
 	#doctor, pond, rory, and tardis placement
-	doctor = Doctor((500,600))
-	doctors.add(doctor)
 	pond = Pond((150,400))
 	ponds.add(pond)
 	#rory = Rory((200,400))
@@ -2266,6 +2440,9 @@ elif level == "setup1":
 	#time rifts: note: to units, rifts will suck them in and kill them, even angels. angels can also be killed by two simultaneous explosions. to other things, like sonics, death rays, and heal rays, it will transport them a certain amount into the future, by a number seen on the rift. This gives a mirror and delay. And, ofcoarse, a rift could possibly have certain times it is present or not, and a unit will keep it to occupied to suck in other units for a few seconds. There is such a thing as a rift explosion, which is a larger, short lived time rift. Regenoration blasts will heal allies, push all enemies, have roughly a fifty percent chance of destroying a wall it passes through, and could possibly explode which would kill enemies, could possibly cause a small rift explosion, or could possibly kill an enemy. It will also, of coarse, have a chance of just pushing them. This depends partly upon the enemy, partly upon randomness, and partly upon later progression. They can also supressively implode volatile map components.
 	#intro
 	print "This setup includes a dalek outpost with captive civilians, an attacking force of silence, a lone cyberman pursuer, and a large amount of weeping angels in an abandoned mine. Good luck..."
+	#Doctor
+	doctor = Doctor((100,700))
+	doctors.add(doctor)
 	#dalek placement
 	speedydaleks.add(SpeedyDalek((320,150)),SpeedyDalek((370,150)))
 	daleks.add(Dalek((55,150)),Dalek((105,150)),Dalek((155,150)),Dalek((128,200)),Dalek((340,375)),silenceorder((700,100)),silenceorder((750,150)),silenceorder((700,100)))
@@ -2299,8 +2476,6 @@ elif level == "setup1":
 	#stone mine
 	barriers.add(StoneWall((700,700)),StoneWall((640,700)),StoneWall((580,700)),StoneWall((520,700)),StoneWall((520,640)),StoneWall((520,580)),StoneWall((520,520)),StoneWall((580,520)),StoneWall((640,520)),StoneWall((700,520)),StoneWall((700,580)),StoneWall((700,640)))
 	#doctor, pond, rory, and tardis placement
-	doctor = Doctor((100,700))
-	doctors.add(doctor)
 	pond = Pond((50,750))
 	ponds.add(pond)
 	rory = Rory((50,700))
@@ -2438,6 +2613,7 @@ elif level == "plot1":
 	mortars.add(Mortar((600,50),(random.choice(range(600)[100:]),random.choice(range(700)[350:])),random.choice(range(90)[20:])))
 	mortars.add(Mortar((700,50),(random.choice(range(600)[100:]),random.choice(range(700)[350:])),random.choice(range(90)[20:])))
 	mortars.add(Mortar((100,50),(random.choice(range(600)[100:]),random.choice(range(700)[350:])),random.choice(range(90)[20:])))
+	reactors.add(Reactor((50,50)),Reactor((150,50)),Reactor((250,50)),Reactor((350,50)),Reactor((450,50)),Reactor((550,50)),Reactor((650,50)),Reactor((750,50)))
 	#pond, rory, and tardis placement
 	#isolated
 	pond = Pond((50,-1400))
@@ -2448,6 +2624,37 @@ elif level == "plot1":
 	tardis = Tardis((300,750))
 	tardises.add(tardis)
 	levelmsg = "Well done. You've succeeded. Enter the coordinates plot2_a69f into the command tardis console. This will take you to the main camp."
+elif level == "plot2_a69f":
+	arena = False
+	stone = True
+	regengun = True
+	electro = True
+	#NEW SETUP ------------------------------------- NEW SETUP ---------------------------------------- NEW SETUP
+	#intro
+	print "Your next mission is to clear out a cave on scarrow that will later be used as a temporary headquarters for a reconnossiance mission. To be level with you, we have no idea what might be in there. On Scarrow, there are a lot of daleks with repeating weapons. Do not get near them. These weapons are prototypes that could kill a time lord instantaneously. You might need this. It is a regenoration weapon. To use, press d. Naturally, it requires energy."
+	COLOR = (50,50,100)
+	#Doctor
+	doctor = Doctor((400,700))
+	doctors.add(doctor)
+	#dalek placement
+	speedydaleks.add(SpeedyDalek((400,100),True))
+	daleks.add(Dalek((100,150),True),Dalek((200,150),True),Dalek((300,150),True),Dalek((100,200),True),Dalek((200,200),True),Dalek((400,400),True),Dalek((600,300),True),Dalek((600,500),True))
+	#environment placement
+	reactors.add(Reactor((125,385)),Reactor((340,340)),Reactor((340,390)))
+	beamers.add(Beamer((200,525),(110,-150)))
+	#angel placement
+	angels.add(WeepingAngel((250,350)),WeepingAngel((580,380)),WeepingAngel((310,240)),WeepingAngel((200,300)))
+	#stone mine
+	barriers.add(StoneWall((700,700)),StoneWall((710,700)),StoneWall((710,710)),StoneWall((700,710)),StoneWall((440,600)),StoneWall((450,600)),StoneWall((450,610)),StoneWall((440,610)))
+	#doctor, pond, rory, and tardis placement
+	pond = Pond((-700,-750))
+	ponds.add(pond)
+	rory = Rory((-700,-700))
+	rorys.add(rory)
+	tardis = Tardis((100,700))
+	tardises.add(tardis)
+	#RIFT
+	levelmsg = "Congratulations. By successfully clearing out the cavern, you have earned a place on the recon mission. The coordinates to your breifing are plot3_1910. Good luck. When the first stage of recon is complete, we will exploit a loophole in their defenses to take you to the next recon point by tardis. Good luck. You could also use more equipment. Keep the regenoration gun, it's standard issue for anyone experienced on the warfront. You can choose a secondary tool."
 else:
 	print "error: Specify proper coordinates. Standard is a good keyphrase to begin with."
 	raise RuntimeError
@@ -2468,6 +2675,21 @@ if arena:
 	barriers.add(Wall((45,800),True),Wall((90,800),True),Wall((135,800),True),Wall((180,800),True),Wall((225,800),True),Wall((270,800),True),Wall((315,800),True),Wall((360,800),True))
 	barriers.add(Wall((495,800),True),Wall((540,800),True),Wall((585,800),True))
 	barriers.add(Wall((405,800),True),Wall((450,800),True),Wall((595,800),True),Wall((640,800),True),Wall((685,800),True),Wall((730,800),True),Wall((775,800),True),Wall((800,800),True))
+elif stone:
+	#wall borders
+	#barriers.add(StoneWall((30,30),True),StoneWall((25,33),True),StoneWall((20,36),True),StoneWall((15,40),True),StoneWall((10,45),True),StoneWall((5,48),True))
+	barriers.add(StoneWall((0,0),True),StoneWall((0,45),True),StoneWall((0,90),True),StoneWall((0,135),True),StoneWall((0,180),True),StoneWall((0,225),True),StoneWall((0,270),True),StoneWall((0,315),True),StoneWall((0,360),True))
+	barriers.add(StoneWall((0,495),True),StoneWall((0,540),True),StoneWall((0,585),True))
+	barriers.add(StoneWall((0,405),True),StoneWall((0,450),True),StoneWall((0,595),True),StoneWall((0,640),True),StoneWall((0,685),True),StoneWall((0,730),True),StoneWall((0,775),True),StoneWall((0,800),True))
+	barriers.add(StoneWall((45,0),True),StoneWall((90,0),True),StoneWall((135,0),True),StoneWall((180,0),True),StoneWall((225,0),True),StoneWall((270,0),True),StoneWall((315,0),True),StoneWall((360,0),True))
+	barriers.add(StoneWall((495,0),True),StoneWall((540,0),True),StoneWall((585,0),True))
+	barriers.add(StoneWall((405,0),True),StoneWall((450,0),True),StoneWall((595,0),True),StoneWall((640,0),True),StoneWall((685,0),True),StoneWall((730,0),True),StoneWall((775,0),True),StoneWall((800,0),True))
+	barriers.add(StoneWall((800,45),True),StoneWall((800,90),True),StoneWall((800,135),True),StoneWall((800,180),True),StoneWall((800,225),True),StoneWall((800,270),True),StoneWall((800,315),True),StoneWall((800,360),True))
+	barriers.add(StoneWall((800,495),True),StoneWall((800,540),True),StoneWall((800,585),True))
+	barriers.add(StoneWall((800,405),True),StoneWall((800,450),True),StoneWall((800,595),True),StoneWall((800,640),True),StoneWall((800,685),True),StoneWall((800,730),True),StoneWall((800,775),True),StoneWall((800,800),True))
+	barriers.add(StoneWall((45,800),True),StoneWall((90,800),True),StoneWall((135,800),True),StoneWall((180,800),True),StoneWall((225,800),True),StoneWall((270,800),True),StoneWall((315,800),True),StoneWall((360,800),True))
+	barriers.add(StoneWall((495,800),True),StoneWall((540,800),True),StoneWall((585,800),True))
+	barriers.add(StoneWall((405,800),True),StoneWall((450,800),True),StoneWall((595,800),True),StoneWall((640,800),True),StoneWall((685,800),True),StoneWall((730,800),True),StoneWall((775,800),True),StoneWall((800,800),True))
 elif arena2:
 	#wall borders
 	#right bottom wall
@@ -2506,6 +2728,7 @@ units.add(daleks,weapondaleks,doctors,ponds,civilians,speedydaleks,angels,rorys,
 units2 = pygame.sprite.RenderUpdates()
 units2.add(daleks,weapondaleks,ponds,civilians,speedydaleks,angels,rorys,cybers,silence)
 foes.add(daleks,weapondaleks,speedydaleks,cybers,silence)
+
 pygame.display.update(daleks.draw(screen))
 pygame.display.update(doctors.draw(screen))
 pygame.display.update(barriers.draw(screen))
@@ -2526,6 +2749,8 @@ pygame.display.update(rifts.draw((screen)))
 pygame.display.update(mortars.draw((screen)))
 echoHealth = False
 
+screen.fill((COLOR))
+
 on = [False,None,None]
 counting = 5
 screeny = [0,800,0,800]
@@ -2533,6 +2758,9 @@ doctorx = doctor.rect.x
 doctory = doctor.rect.y
 doctorx2 = doctor.rect.x
 doctory2 = doctor.rect.y
+
+screen.fill((COLOR))
+pygame.display.update(everything.draw(screen))
 
 print regen
 while True:
@@ -2571,12 +2799,12 @@ while True:
 			print "not x or y???"
 			raise RuntimeError
 		for item in every:
-			screen.fill((150,150,200),item.rect)
+			screen.fill((COLOR),item.rect)
 			item.rect.move_ip(on[2])
 			if item in ventGates:
 				item.move(on[2])
 		if counting == 0:
-			screen.fill((150,150,200))
+			screen.fill((COLOR))
 			pygame.display.update(every.draw((screen)))
 			pygame.display.update(barriers.draw((screen)))
 			pygame.display.update(reactors.draw((screen)))
@@ -2645,6 +2873,7 @@ while True:
 	pygame.display.update(beamers.draw((screen)))
 	pygame.display.update(rifts.draw((screen)))
 	pygame.display.update(mortars.draw((screen)))
+	#pygame.display.update(booms.draw((screen)))
 	rifts.update(units)
 	PossibleReconsrtruct()
 	for boom in booms:
@@ -2653,6 +2882,8 @@ while True:
 	                if other != boom and other.impermeable == False:
 				everything.remove(other)
 				barriers.remove(other)
+			else:
+				booms.remove(boom)
 	for VentGate in ventGates:
 		VentGate.openedClosed()
 	for reactor in reactors:
