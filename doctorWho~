@@ -1577,10 +1577,10 @@ class sonicWave(Moveable):
 					self.destructCountDown = 1
 			return True
 
-class electricWave(Moveable):
+class electroWave(Moveable):
 	def __init__(self,pos,direction):
 		Moveable.__init__(self,pos,"electroBolt.png")
-		self.destructCountDown = 45
+		self.destructCountDown = 120
 		self.direction = direction
 		if abs(self.direction[1]) > abs(self.direction[0]):
 			self.image = self.vertical
@@ -1589,11 +1589,12 @@ class electricWave(Moveable):
 		projectiles.add(self)
 		self.delay = 0
 		self.nextTo = False
+		everything.remove(self)
 	def update(self):
 		if self.delay > 0:
 			self.delay -= 1
 			return True
-		if self.nextTo == False:
+		if True:
 			for dalek in projectiles:
 				if self.rangeTo(dalek) < 120 and dalek != self:
 					self.nextTo = [True,dalek]
@@ -1606,47 +1607,147 @@ class electricWave(Moveable):
 			for dalek in speedydaleks:
 				if self.rangeTo(dalek) < 120:
 					self.nextTo = [True,dalek]
+		if self.nextTo == False:
+			for thing in everything:
+				if self.rangeTo(thing) < 100 and thing != doctor:
+					if random.choice([True,False]):
+						self.move(*self.moveRelative(thing,-1))
 		screen.fill((COLOR),self.rect)
 		self.destructCountDown = self.destructCountDown - 1
 		if self.destructCountDown == 0:
+			collisions = pygame.sprite.spritecollide(self, daleks, False)
+			for other in collisions:
+				if other != self:
+					other.paralyzed = False
+					other.deathbolt = None
+			collisions = pygame.sprite.spritecollide(self, speedydaleks, False)
+			for other in collisions:
+				if other != self:
+					other.paralyzed = False
+					other.speedbolt = None
+			collisions = pygame.sprite.spritecollide(self, weapondaleks, False)
+			for other in collisions:
+				if other != self:
+					other.paralyzed = False
+					other.boombolt = None
 			return False
 		else:
-			if self.nextTo != False:
-				self.rect.move_ip(*self.direction)
-				self.rect.move_ip(*self.direction)
+			#print self.nextTo
+			#print self.destructCountDown
+			if self.nextTo == False:
 				self.rect.move_ip(*self.direction)
 				self.rect.move_ip(*self.direction)
 				self.rect.move_ip(*self.direction)
 			else:
-				self.move(*self.moveRelative(nextTo[1]),10)
+				if self.rangeTo(self.nextTo[1]) < 10:
+					pass
+				else:
+					self.move(*self.moveRelative(self.nextTo[1],14))
 			collisions = pygame.sprite.spritecollide(self, projectiles, False)
 			for other in collisions:
 				if other != self:
 					other.destructCountDown = 1
 			collisions = pygame.sprite.spritecollide(self, daleks, False)
 			for other in collisions:
-				if other != self:
+				if other != self and other:
 					other.paralyzed = True
+					deathbolts.remove(other.deathbolt)
+					projectiles.remove(other.deathbolt)
+					#screen.fill(COLOR,other.deathbolt.rect)
+					other.deathbolt = returner()
 			collisions = pygame.sprite.spritecollide(self, speedydaleks, False)
 			for other in collisions:
-				if other != self:
+				if other != self and other:
 					other.paralyzed = True
+					speedbolts.remove(other.speedbolt)
+					projectiles.remove(other.speedbolt)
+					#screen.fill(COLOR,other.boombolt.rect)
+					other.speedbolt = returner()
 			collisions = pygame.sprite.spritecollide(self, weapondaleks, False)
 			for other in collisions:
-				if other != self:
+				if other != self and other:
 					other.paralyzed = True
+					boombolts.remove(other.boombolt)
+					projectiles.remove(other.boombolt)
+					booms.remove(other.boombolt)
+					#screen.fill(COLOR,other.speedbolt.rect)
+					other.boombolt = returner()
 			collisions = pygame.sprite.spritecollide(self, ventGates, False)
 			for other in collisions:
 				if other != self:
-					self.destructCountDown = 0
+					collisions = pygame.sprite.spritecollide(self, daleks, False)
+					for other in collisions:
+						if other != self:
+							other.paralyzed = False
+							other.deathbolt = None
+					collisions = pygame.sprite.spritecollide(self, speedydaleks, False)
+					for other in collisions:
+						if other != self:
+							other.paralyzed = False
+							other.speedbolt = None
+					collisions = pygame.sprite.spritecollide(self, weapondaleks, False)
+					for other in collisions:
+						if other != self:
+							other.paralyzed = False
+							other.boombolt = None
+					return False
+			collisions = pygame.sprite.spritecollide(self, beamers, False)
+			for other in collisions:
+				if other != self:
+					collisions = pygame.sprite.spritecollide(self, daleks, False)
+					for other in collisions:
+						if other != self:
+							other.paralyzed = False
+							other.deathbolt = None
+					collisions = pygame.sprite.spritecollide(self, speedydaleks, False)
+					for other in collisions:
+						if other != self:
+							other.paralyzed = False
+							other.speedbolt = None
+					collisions = pygame.sprite.spritecollide(self, weapondaleks, False)
+					for other in collisions:
+						if other != self:
+							other.paralyzed = False
+							other.boombolt = None
+					return False
 			collisions = pygame.sprite.spritecollide(self, reactors, False)
 			for other in collisions:
 				if other != self:
-					self.destructCountDown = 0
+					collisions = pygame.sprite.spritecollide(self, daleks, False)
+					for other in collisions:
+						if other != self:
+							other.paralyzed = False
+							other.deathbolt = None
+					collisions = pygame.sprite.spritecollide(self, speedydaleks, False)
+					for other in collisions:
+						if other != self:
+							other.paralyzed = False
+							other.speedbolt = None
+					collisions = pygame.sprite.spritecollide(self, weapondaleks, False)
+					for other in collisions:
+						if other != self:
+							other.paralyzed = False
+							other.boombolt = None
+					return False
 			collisions = pygame.sprite.spritecollide(self, barriers, False)
 			for other in collisions:
 				if other != self:
-					self.destructCountDown = 0
+					collisions = pygame.sprite.spritecollide(self, daleks, False)
+					for other in collisions:
+						if other != self:
+							other.paralyzed = False
+							other.deathbolt = None
+					collisions = pygame.sprite.spritecollide(self, speedydaleks, False)
+					for other in collisions:
+						if other != self:
+							other.paralyzed = False
+							other.speedbolt = None
+					collisions = pygame.sprite.spritecollide(self, weapondaleks, False)
+					for other in collisions:
+						if other != self:
+							other.paralyzed = False
+							other.boombolt = None
+					return False
 			return True
 
 class returner():
@@ -2327,7 +2428,7 @@ class Doctor(Moveable):
 				sonics.remove(self.elecbolt)
 				projectiles.remove(self.elecbolt)
 				self.elecbolt = None
-		elif self.alternateKey == True and electro = True:
+		elif self.alternateKey == True and electro == True:
 			direction = self.d
 			self.elecbolt = electroWave(self.rect.center,direction)
 			sonics.add(self.elecbolt)
@@ -2387,8 +2488,9 @@ projectiles2 = projectiles
 
 arena = True
 arena2 = False
-regengun = False
 stone = False
+regengun = False
+electro = False
 
 if level == '':
 	level = 'setup1'
