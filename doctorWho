@@ -8,6 +8,9 @@ SPEED = 0.05
 COLOR = (150,150,200)
 #
 
+caption = [str(),str(),str()]
+alt = [str(),str(),str()]
+
 text1 = "Right, here are the rules. Use the arrow keys to control your movement. As the name implies, you control the doctor. You also have three other controls. F will make you move faster, but only for so long and then you must wait before sprinting again. S will use the sonic screwdriver, which interacts in various ways with the environment, closing gates and detonating things. H will heal you should you become injured, however, this uses up energy that you could also use to regenorate at the tardis if you are very badly injured. There are daleks, which will shoot you, special weapons versions, which have explosive projectiles that could be used to your advantage, and versions that are much faster and more deadly that have projectiles that only harm you, however a single shot from one such projectile will end the game. There are also silence, which will influence enemies to move towards you, cybermen, which are fast and destructive, and weeping angels, which will kill anything it can see if noone sees it. Coming soon are members of the order of the silence and the master. Good luck."
 
 text = text1.split()
@@ -708,6 +711,11 @@ class DeathBolt(Moveable):
 			for other in collisions:
 				if other == doctor:
 					print "you just got shot, health at", health, "out of 15"
+					captionset = str("just shot, health " + str(health) + "/15")
+					if random.choice([True,False]):
+						caption[random.choice(range(2))] = captionset
+					else:
+						alt[random.choice(range(3))] = captionset
 					self.rect.move_ip(*self.direction)
 					self.rect.move_ip(*self.direction)
 					self.rect.move_ip(*self.direction)
@@ -1026,6 +1034,11 @@ class Civilian(Moveable):
 				self.gone = True
 				saved1 = saved1 + 1
 				print saved1, "saved"
+				captionset = str("just saved 1 civilian, " + str(saved1) + " saved")
+				if random.choice([True,False]):
+					caption[random.choice(range(2))] = captionset
+				else:
+					alt[random.choice(range(3))] = captionset
 				return [saved1,dead1]
 		collisions = pygame.sprite.spritecollide(self, booms, False)
 		for other in collisions:
@@ -1033,6 +1046,11 @@ class Civilian(Moveable):
 				self.gone = True
 				dead1 = dead1 + 1
 				print dead1, "dead"
+				captionset = str("1 civilian just killed, " + str(dead1) + " dead")
+				if random.choice([True,False]):
+					caption[random.choice(range(2))] = captionset
+				else:
+					alt[random.choice(range(3))] = captionset
 				return [saved1,dead1]
 		collisions = pygame.sprite.spritecollide(self, deathbolts, False)
 		for other in collisions:
@@ -1040,6 +1058,11 @@ class Civilian(Moveable):
 				self.gone = True
 				dead1 = dead1 + 1
 				print dead1, "dead"
+				captionset = str("1 civilian just killed, " + str(dead1) + " dead")
+				if random.choice([True,False]):
+					caption[random.choice(range(2))] = captionset
+				else:
+					alt[random.choice(range(3))] = captionset
 				return  [saved1,dead1]
 		return [saved,dead]
 
@@ -1313,6 +1336,11 @@ class silencebolt(Moveable):
 			for other in collisions:
 				if other == doctor:
 					print "you just got shot, health at", health, "out of 15"
+					captionset = str("just shot, health " + str(health) + "/15")
+					if random.choice([True,False]):
+						caption[random.choice(range(2))] = captionset
+					else:
+						alt[random.choice(range(3))] = captionset
 					self.rect.move_ip(*self.direction)
 					self.rect.move_ip(*self.direction)
 					self.rect.move_ip(*self.direction)
@@ -1577,6 +1605,41 @@ class sonicWave(Moveable):
 					self.destructCountDown = 1
 			return True
 
+#advanced sonic!
+
+class kineticWave(Moveable):
+	def __init__(self,pos,direction):
+		Moveable.__init__(self,pos,"kineticBolt.png")
+		self.destructCountDown = 100
+		self.direction = direction
+		if abs(self.direction[1]) > abs(self.direction[0]):
+			self.image = self.vertical
+			self.rect = self.image.get_rect()
+			self.rect.center = pos
+		projectiles.add(self)
+		self.delay = 0
+	def update(self):
+		if self.delay > 0:
+			self.delay -= 1
+			return True
+		screen.fill((COLOR),self.rect)
+		self.destructCountDown = self.destructCountDown - 1
+		if self.destructCountDown == 0:
+			return False
+		else:
+			self.rect.move_ip(*self.direction)
+			collisions = pygame.sprite.spritecollide(self, barriers, False)
+			for other in collisions:
+				if other != self and other.impermeable == True:
+					self.destructCountDown = 1
+			collisions = pygame.sprite.spritecollide(self, foes, False)
+			for other in collisions:
+				if other != self:
+					other.move(*self.direction)
+					if random.choice([True,False]):
+						other.move(*self.direction)
+			return True
+
 class electroWave(Moveable):
 	def __init__(self,pos,direction):
 		Moveable.__init__(self,pos,"electroBolt.png")
@@ -1838,6 +1901,11 @@ class regenbolt(Moveable):
 						other.move(*other.moveRelative(doctor,-20))
 						if randomizer > 9:
 							print "STRIKE"
+							captionset = "regenbolt--STRIKE"
+							if random.choice([True,False]):
+								caption[random.choice(range(2))] = captionset
+							else:
+								alt[random.choice(range(3))] = captionset
 							deathbolts.remove(other.deathbolt)
 							other.move(*other.movePerpendicular(doctor,-6))
 							other.move(*other.movePerpendicular(doctor,-6))
@@ -1852,17 +1920,37 @@ class regenbolt(Moveable):
 							other.move(*other.movePerpendicular(doctor,-6))
 						elif randomizer == 8:
 							print "TERROR"
+							captionset = "regenbolt--TERROR"
+							if random.choice([True,False]):
+								caption[random.choice(range(2))] = captionset
+							else:
+								alt[random.choice(range(3))] = captionset
 							other.terror = True
 						elif randomizer < 3:
 							print "EMP"
+							captionset = "regenbolt--EMP"
+							if random.choice([True,False]):
+								caption[random.choice(range(2))] = captionset
+							else:
+								alt[random.choice(range(3))] = captionset
 							other.paralyzed = True
 							deathbolts.remove(other.deathbolt)
 							other.deathbolt = returner()
 						elif randomizer >= 5:
 							print "MOTORS DISABLED"
+							captionset = "regenbolt--MOTORS DISABLED"
+							if random.choice([True,False]):
+								caption[random.choice(range(2))] = captionset
+							else:
+								alt[random.choice(range(3))] = captionset
 							other.paralyzed = True
 						else:
 							print "WEAPONS DISABLED"
+							captionset = "regenbolt--WEAPONS DISABLED"
+							if random.choice([True,False]):
+								caption[random.choice(range(2))] = captionset
+							else:
+								alt[random.choice(range(3))] = captionset
 							deathbolts.remove(other.deathbolt)
 							other.deathbolt = returner()
 			collisions = pygame.sprite.spritecollide(self, weapondaleks, False)
@@ -1875,6 +1963,11 @@ class regenbolt(Moveable):
 						other.move(*other.moveRelative(doctor,-20))
 						if randomizer > 10:
 							print "STRIKE"
+							captionset = "regenbolt--STRIKE"
+							if random.choice([True,False]):
+								caption[random.choice(range(2))] = captionset
+							else:
+								alt[random.choice(range(3))] = captionset
 							boombolts.remove(other.boombolt)
 							other.move(*other.movePerpendicular(doctor,-6))
 							other.move(*other.movePerpendicular(doctor,-6))
@@ -1889,9 +1982,19 @@ class regenbolt(Moveable):
 							other.move(*other.movePerpendicular(doctor,-6))
 						elif randomizer >= 9:
 							print "INSANITY"
+							captionset = "regenbolt--INSANITY"
+							if random.choice([True,False]):
+								caption[random.choice(range(2))] = captionset
+							else:
+								alt[random.choice(range(3))] = captionset
 							other.insane = True
 						elif randomizer < 3:
 							print "ENTOMBED"
+							captionset = "regenbolt--DALEK ENTOMBED"
+							if random.choice([True,False]):
+								caption[random.choice(range(2))] = captionset
+							else:
+								alt[random.choice(range(3))] = captionset
 							things = pygame.sprite.RenderUpdates()
 							thing = Wall(other.rect.center,True)
 							everything.add(thing)
@@ -1922,9 +2025,19 @@ class regenbolt(Moveable):
 							self.rect.move_ip(*self.direction)
 						elif randomizer >= 5:
 							print "MOTORS SABOTAGED"
+							captionset = "regenbolt--MOTORS HACKED"
+							if random.choice([True,False]):
+								caption[random.choice(range(2))] = captionset
+							else:
+								alt[random.choice(range(3))] = captionset
 							other.spinny = True
 						else:
 							print "WEAPONS SABOTAGED"
+							captionset = "regenbolt--WEAPONS DESTABILIZED"
+							if random.choice([True,False]):
+								caption[random.choice(range(2))] = captionset
+							else:
+								alt[random.choice(range(3))] = captionset
 							everything2.add(other)
 			collisions = pygame.sprite.spritecollide(self, speedydaleks, False)
 			for other in collisions:
@@ -1936,10 +2049,20 @@ class regenbolt(Moveable):
 						other.move(*other.moveRelative(doctor,-20))
 						if randomizer > 12:
 							print "STRIKE"
+							captionset = "regenbolt--STRIKE"
+							if random.choice([True,False]):
+								caption[random.choice(range(2))] = captionset
+							else:
+								alt[random.choice(range(3))] = captionset
 							speedbolts.remove(other.speedbolt)
 							other.move(*other.movePerpendicular(doctor,-60))
 						elif randomizer >= 9:
 							print "DEGRADED"
+							captionset = "regenbolt--REPEATER DEGRADED"
+							if random.choice([True,False]):
+								caption[random.choice(range(2))] = captionset
+							else:
+								alt[random.choice(range(3))] = captionset
 							things = pygame.sprite.RenderUpdates()
 							thing = Dalek(other.rect.center)
 							everything.add(thing)
@@ -1971,14 +2094,29 @@ class regenbolt(Moveable):
 							self.rect.move_ip(*self.direction)
 						elif randomizer < 5:
 							print "PETRIFIED"
+							captionset = "regenbolt--TURNED TO STONE"
+							if random.choice([True,False]):
+								caption[random.choice(range(2))] = captionset
+							else:
+								alt[random.choice(range(3))] = captionset
 							other.paralyzed = True
 							speedbolts.remove(other.speedbolt)
 							other.speedbolt = returner()
 						elif randomizer > 6:
 							print "MOTORS BROKEN"
+							captionset = "regenbolt--MOTORS SABOTAGED"
+							if random.choice([True,False]):
+								caption[random.choice(range(2))] = captionset
+							else:
+								alt[random.choice(range(3))] = captionset
 							other.side = True
 						else:
 							print "WEAPONS DISABLED"
+							captionset = "regenbolt--WEAPONS OFFLINE"
+							if random.choice([True,False]):
+								caption[random.choice(range(2))] = captionset
+							else:
+								alt[random.choice(range(3))] = captionset
 							speedbolts.remove(other.speedbolt)
 							other.speedbolt = returner()
 			collisions = pygame.sprite.spritecollide(self, cybers, False)
@@ -1991,6 +2129,11 @@ class regenbolt(Moveable):
 						other.move(*other.moveRelative(doctor,-20))
 						if randomizer > 9:
 							print "STRIKE"
+							captionset = "regenbolt--STRIKE"
+							if random.choice([True,False]):
+								caption[random.choice(range(2))] = captionset
+							else:
+								alt[random.choice(range(3))] = captionset
 							boombolts.remove(other.boombolt)
 							other.move(*other.movePerpendicular(doctor,-6))
 							other.move(*other.movePerpendicular(doctor,-6))
@@ -2005,9 +2148,19 @@ class regenbolt(Moveable):
 							other.move(*other.movePerpendicular(doctor,-6))
 						elif randomizer == 8:
 							print "MOTORS CORRUPTED"
+							captionset = "regenbolt--MOTOR CORE CORRUPTED"
+							if random.choice([True,False]):
+								caption[random.choice(range(2))] = captionset
+							else:
+								alt[random.choice(range(3))] = captionset
 							self.spazzy=True
 						elif randomizer < 3:
 							print "CIVILIAN RESTORED"
+							captionset = "regenbolt--CIVILIAN RESTORED"
+							if random.choice([True,False]):
+								caption[random.choice(range(2))] = captionset
+							else:
+								alt[random.choice(range(3))] = captionset
 							things = pygame.sprite.RenderUpdates()
 							thing = Civilian(other.rect.center)
 							everything.add(thing)
@@ -2039,9 +2192,19 @@ class regenbolt(Moveable):
 							self.rect.move_ip(*self.direction)
 						elif randomizer >= 5:
 							print "WEAPONS SABOTAGED"
+							captionset = "regenbolt--WEAPONS DESTABILIZED"
+							if random.choice([True,False]):
+								caption[random.choice(range(2))] = captionset
+							else:
+								alt[random.choice(range(3))] = captionset
 							everything2.add(other)
 						else:
 							print "WEAPONS DISABLED"
+							captionset = "regenbolt--WEAPONS DISABLED"
+							if random.choice([True,False]):
+								caption[random.choice(range(2))] = captionset
+							else:
+								alt[random.choice(range(3))] = captionset
 							boombolts.remove(other.boombolt)
 							other.boombolt = returner()
 			collisions = pygame.sprite.spritecollide(self, angels, False)
@@ -2054,6 +2217,11 @@ class regenbolt(Moveable):
 						other.move(*other.moveRelative(doctor,-20))
 						if randomizer > 7:
 							print "STRIKE"
+							captionset = "regenbolt--STRIKE"
+							if random.choice([True,False]):
+								caption[random.choice(range(2))] = captionset
+							else:
+								alt[random.choice(range(3))] = captionset
 							other.timeLapse += 100
 							other.move(*other.movePerpendicular(doctor,-6))
 							other.move(*other.movePerpendicular(doctor,-6))
@@ -2078,25 +2246,55 @@ class regenbolt(Moveable):
 						other.move(*other.moveRelative(doctor,-20))
 						if randomizer > 9:
 							print "STRIKE"
+							captionset = "regenbolt--STRIKE"
+							if random.choice([True,False]):
+								caption[random.choice(range(2))] = captionset
+							else:
+								alt[random.choice(range(3))] = captionset
 							everything.remove(other)
 							silence.remove(other)
 							everything2.remove(other)
 						elif randomizer == 8:
 							print "PROJECTION OF MAYHEM"
+							captionset = "regenbolt--MAYHEM PROJECTION"
+							if random.choice([True,False]):
+								caption[random.choice(range(2))] = captionset
+							else:
+								alt[random.choice(range(3))] = captionset
 							#other.mayhem()
 						elif randomizer < 2:
 							print "ELECTRIC BACKFIRE"
+							captionset = "regenbolt--ELECTRIC BACKFIRE"
+							if random.choice([True,False]):
+								caption[random.choice(range(2))] = captionset
+							else:
+								alt[random.choice(range(3))] = captionset
 							#other.shock()
 						elif randomizer >= 5:
 							print "FATIGUE"
+							captionset = "regenbolt--FATIGUE"
+							if random.choice([True,False]):
+								caption[random.choice(range(2))] = captionset
+							else:
+								alt[random.choice(range(3))] = captionset
 							other.paralyzed = True
 						else:
 							print "BLINDNESS"
+							captionset = "regenbolt--BLINDED"
+							if random.choice([True,False]):
+								caption[random.choice(range(2))] = captionset
+							else:
+								alt[random.choice(range(3))] = captionset
 							other.blind = True
 			collisions = pygame.sprite.spritecollide(self, reactors, False)
 			for other in collisions:
 				if other != self:
 					print "REACTOR STABILIZED"
+					captionset = "regenbolt--REACTOR STABILIZED"
+					if random.choice([True,False]):
+						caption[random.choice(range(2))] = captionset
+					else:
+						alt[random.choice(range(3))] = captionset
 					reactors.remove(other)
 					barriers.add(other)
 			collisions = pygame.sprite.spritecollide(self, bombs, False)
@@ -2113,9 +2311,19 @@ class regenbolt(Moveable):
 						self.past.append(other)
 						if randomizer > 9:
 							print "DETONATE"
+							captionset = "regenbolt--DETONATION"
+							if random.choice([True,False]):
+								caption[random.choice(range(2))] = captionset
+							else:
+								alt[random.choice(range(3))] = captionset
 							other.destruct()
 						elif randomizer >= 6:
 							print "PACKAGE ASSEMBLED"
+							captionset = "regenbolt--PACKAGE ASSEMBLED"
+							if random.choice([True,False]):
+								caption[random.choice(range(2))] = captionset
+							else:
+								alt[random.choice(range(3))] = captionset
 							if randomizer == 6:
 								things = pygame.sprite.RenderUpdates()
 								thing = VentGate(other.rect.center)
@@ -2223,6 +2431,11 @@ class regenbolt(Moveable):
 							self.destruct()
 						else:
 							print "STABILIZED"
+							captionset = "regenbolt--REENFORCED"
+							if random.choice([True,False]):
+								caption[random.choice(range(2))] = captionset
+							else:
+								alt[random.choice(range(3))] = captionset
 							crates.remove(other)
 							barriers.add(other)
 							everything.add(other)
@@ -2240,12 +2453,15 @@ class regenbolt(Moveable):
 			for other in collisions:
 				if other != self:
 					print "TELEPORT BEAM POWER OVERLOAD"
+					captionset = "regenbolt--BEAMER POWER OVERLOADED"
+					if random.choice([True,False]):
+						caption[random.choice(range(2))] = captionset
+					else:
+						alt[random.choice(range(3))] = captionset
 					collisions2 = pygame.sprite.spritecollide(other, everything7, False)
 					for other2 in collisions2:
 						if other2 != other:
-							other2.move(*other.coordinates)
-							other2.move(*other.coordinates)
-							other2.move(*other.coordinates)
+							other2.move(*(other.coordinates[0]*3,other.coordinates[1]*3))
 			collisions = pygame.sprite.spritecollide(self, barriers, False)
 			for other in collisions:
 				if other != self and other.impermeable == False:
@@ -2260,6 +2476,11 @@ class regenbolt(Moveable):
 			return True
 	def destruct(self):
 		print "RIFT"
+		captionset = "regenbolt--TIME RIFT"
+		if random.choice([True,False]):
+			caption[random.choice(range(2))] = captionset
+		else:
+			alt[random.choice(range(3))] = captionset
 		things = pygame.sprite.RenderUpdates()
 		thing = TimeRift(self.rect.center,random.choice(range(100)),random.choice(range(3000)))
 		things.add(thing)
@@ -2292,6 +2513,7 @@ class Doctor(Moveable):
 		self.rbolt = None
 		self.rgun = None
 		self.elecbolt = False
+		self.kinetbolt = False
 	def update(self):
 		for item in pygame.event.get():
 			if item.type == pygame.KEYDOWN and item.key == 275:
@@ -2345,6 +2567,7 @@ class Doctor(Moveable):
 				self.alternateKey = False
 			if item.type == pygame.KEYUP and item.key == pygame.K_i:
 				print 'saved', saved, 'dead', dead, 'health', health, 'regenoration energy', regen
+				caption[2] = str('saved ' + str(saved) + ' dead ' + str(dead) + ' health ' + str(health) + ' regenoration energy ' + str(regen))
 		if self.thingRight == True:
 			self.move(2,0)
 		if self.thingLeft == True:
@@ -2372,6 +2595,9 @@ class Doctor(Moveable):
 		if health < 0:
 			if random.choice([1,2,3,4,5,6,7,8,9]) == 1:
 				print "badly injured, get to the tardis"
+				captionset = "BADLY INJURED GET TO TARDIS"
+				caption[random.choice(range(2))] = captionset
+				alt[random.choice(range(3))] = captionset
                 	if stamina < 0:
                         	print "Game Over--you died"
                        		raise SystemExit
@@ -2383,6 +2609,11 @@ class Doctor(Moveable):
 						regen -= 100
 					else:
 						print "insufficient energy... Your pretty much screwed. These tricks can't always save you."
+						captionset = "INSUFFICIENT ENERGY"
+						if random.choice([True,False]):
+							caption[random.choice(range(2))] = captionset
+						else:
+							alt[random.choice(range(3))] = captionset
 		collisionsA = pygame.sprite.spritecollide(self, deathbolts, False)
                 for other in collisionsA:
 	                if other != self:
@@ -2397,6 +2628,11 @@ class Doctor(Moveable):
 			if other != self and other != self.bolt:
 				health = health -4
 				print "boom collision"
+				captionset = "COLLISON WITH EXPLOSION"
+				if random.choice([True,False]):
+					caption[random.choice(range(2))] = captionset
+				else:
+					alt[random.choice(range(3))] = captionset
 		return health
 	def heal(self, health, regen):
 		rtn = [health,regen]
@@ -2407,10 +2643,25 @@ class Doctor(Moveable):
 					health = health + 1
 					rtn = [health, regen]
 					print "healing... health at ", health, " out of 15"
+					captionset = str("healing, health " + str(health) + "/15")
+					if random.choice([True,False]):
+						caption[random.choice(range(2))] = captionset
+					else:
+						alt[random.choice(range(3))] = captionset
 				else:
 					print "cannot heal, insufficient regenorations"
+					captionset = "CAN'T HEAL: LACK ENERGY"
+					if random.choice([True,False]):
+						caption[random.choice(range(2))] = captionset
+					else:
+						alt[random.choice(range(3))] = captionset
 			else:
 				print "you are uninjured"
+				captionset = "you are uninjured"
+				if random.choice([True,False]):
+					caption[random.choice(range(2))] = captionset
+				else:
+					alt[random.choice(range(3))] = captionset
 		return rtn
 	def sonicDoor(self,regen):
 		#print regen
@@ -2432,6 +2683,15 @@ class Doctor(Moveable):
 			direction = self.d
 			self.elecbolt = electroWave(self.rect.center,direction)
 			sonics.add(self.elecbolt)
+		if self.kinetbolt:
+			if self.kinetbolt.update() == False:
+				sonics.remove(self.kinetbolt)
+				projectiles.remove(self.kinetbolt)
+				self.kinetbolt = None
+		elif self.alternateKey == True and kinetic == True:
+			direction = self.d
+			self.kinetbolt = kineticWave(self.rect.center,direction)
+			sonics.add(self.kinetbolt)
 		if self.rbolt:
 			if self.rbolt.update() == False:
 				sonics.remove(self.rbolt)
@@ -2455,9 +2715,6 @@ class Doctor(Moveable):
 			regen -= 300
 		return regen
 pygame.init()
-screen = pygame.display.set_mode((800,800))
-screen.fill((COLOR))
-pygame.display.update()
 daleks = pygame.sprite.RenderUpdates()
 speedydaleks = pygame.sprite.RenderUpdates()
 weapondaleks = pygame.sprite.RenderUpdates()
@@ -2491,6 +2748,7 @@ arena2 = False
 stone = False
 regengun = False
 electro = False
+kinetic = False
 
 if level == '':
 	level = 'setup1'
@@ -2498,6 +2756,10 @@ if level == '':
 if level == "standard":
 	#intro
 	print "Be ready to deal with a large squad of daleks and a rogue weeping angel... And, of coarse, to protect civilians, amy, and rory."
+	time.sleep(3)
+	screen = pygame.display.set_mode((800,800))
+	screen.fill((COLOR))
+	pygame.display.update()
 	#Doctor
 	doctor = Doctor((500,600))
 	doctors.add(doctor)
@@ -2542,6 +2804,10 @@ elif level == "setup1":
 	#time rifts: note: to units, rifts will suck them in and kill them, even angels. angels can also be killed by two simultaneous explosions. to other things, like sonics, death rays, and heal rays, it will transport them a certain amount into the future, by a number seen on the rift. This gives a mirror and delay. And, ofcoarse, a rift could possibly have certain times it is present or not, and a unit will keep it to occupied to suck in other units for a few seconds. There is such a thing as a rift explosion, which is a larger, short lived time rift. Regenoration blasts will heal allies, push all enemies, have roughly a fifty percent chance of destroying a wall it passes through, and could possibly explode which would kill enemies, could possibly cause a small rift explosion, or could possibly kill an enemy. It will also, of coarse, have a chance of just pushing them. This depends partly upon the enemy, partly upon randomness, and partly upon later progression. They can also supressively implode volatile map components.
 	#intro
 	print "This setup includes a dalek outpost with captive civilians, an attacking force of silence, a lone cyberman pursuer, and a large amount of weeping angels in an abandoned mine. Good luck..."
+	time.sleep(3)
+	screen = pygame.display.set_mode((800,800))
+	screen.fill((COLOR))
+	pygame.display.update()
 	#Doctor
 	doctor = Doctor((100,700))
 	doctors.add(doctor)
@@ -2593,6 +2859,10 @@ elif level == "plot1":
 	#unlockables: secondary screwdriver, gadget, physic paper, regenoration powers, regenoration manipulators, vortex manipulator, time energy bolt, tardis sheilds, tardis stasis emissions, regen heal, regen sprint, regen heal/protect other, regen bolt, regenbolt powers, timebolt powers, regenwall, regenpush, regensheild, regensonic, regentime, perceptionfilter, build(spend time to turn say a ventgate into a teleporter, or a crate into a mortar), hack some electronic sprites(difficult but could theoretically use a very diverse amount of new functions especially when combined with build), 
 	#intro
 	print "Your next posting will be at the warfront. Welcome to the fourth time war. Report to the command tardis. From there you will be expected to knock out an assualt squadron of daleks overseeing the bombing of the area. Get to their leader."
+	time.sleep(3)
+	screen = pygame.display.set_mode((800,800))
+	screen.fill((COLOR))
+	pygame.display.update()
 	#doctor
 	doctor = Doctor((400,750))
 	doctors.add(doctor)
@@ -2730,11 +3000,15 @@ elif level == "plot2_a69f":
 	arena = False
 	stone = True
 	regengun = True
-	electro = True
+	#electro = True
 	#NEW SETUP ------------------------------------- NEW SETUP ---------------------------------------- NEW SETUP
 	#intro
 	print "Your next mission is to clear out a cave on scarrow that will later be used as a temporary headquarters for a reconnossiance mission. To be level with you, we have no idea what might be in there. On Scarrow, there are a lot of daleks with repeating weapons. Do not get near them. These weapons are prototypes that could kill a time lord instantaneously. You might need this. It is a regenoration weapon. To use, press d. Naturally, it requires energy."
 	COLOR = (50,50,100)
+	time.sleep(3)
+	screen = pygame.display.set_mode((800,800))
+	screen.fill((COLOR))
+	pygame.display.update()
 	#Doctor
 	doctor = Doctor((400,700))
 	doctors.add(doctor)
@@ -2756,7 +3030,44 @@ elif level == "plot2_a69f":
 	tardis = Tardis((100,700))
 	tardises.add(tardis)
 	#RIFT
-	levelmsg = "Congratulations. By successfully clearing out the cavern, you have earned a place on the recon mission. The coordinates to your breifing are plot3_1910. Good luck. When the first stage of recon is complete, we will exploit a loophole in their defenses to take you to the next recon point by tardis. Good luck. You could also use more equipment. Keep the regenoration gun, it's standard issue for anyone experienced on the warfront. You can choose a secondary tool."
+	levelmsg = "Congratulations. By successfully clearing out the cavern, you have earned a place on the recon mission. The coordinates to your breifing are plot3_1910. Good luck. When the first stage of recon is complete, we will exploit a loophole in their defenses to take you to the next recon point by tardis. Good luck. You could also use more equipment. Regenoration weapons are only taken during possible assault missions, so you will return it. You can choose a secondary tool, however."
+elif level == "plot3_1910":
+	arena = False
+	stone = True
+	#NEW SETUP ------------------------------------- NEW SETUP ---------------------------------------- NEW SETUP
+	#intro
+	print "Welcome to the first stage of recon. You will go with two others to learn about the area and possibly sabotage an outpost. Good luck. We don't expect much of a fight, but maybe you should take one of these."
+	sidearm = raw_input("Would you like the electric screwdriver(1), kinetic screwdriver(2), or thermal screwdriver(3)?: ")
+	if sidearm == "1":
+		electro = True
+	if sidearm == "2":
+		kinetic = True
+	time.sleep(3)
+	screen = pygame.display.set_mode((800,800))
+	screen.fill((COLOR))
+	pygame.display.update()
+	#Doctor
+	doctor = Doctor((400,700))
+	doctors.add(doctor)
+	#dalek placement
+	speedydaleks.add(SpeedyDalek((400,100),True))
+	daleks.add(Dalek((100,150),True),Dalek((200,150),True),Dalek((300,150),True),Dalek((100,200),True),Dalek((200,200),True),Dalek((400,400),True),Dalek((600,300),True),Dalek((600,500),True))
+	#environment placement
+	reactors.add(Reactor((125,385)),Reactor((340,340)),Reactor((340,390)))
+	beamers.add(Beamer((200,525),(110,-150)))
+	#angel placement
+	angels.add(WeepingAngel((250,350)),WeepingAngel((580,380)),WeepingAngel((310,240)),WeepingAngel((200,300)))
+	#stone mine
+	barriers.add(StoneWall((700,700)),StoneWall((710,700)),StoneWall((710,710)),StoneWall((700,710)),StoneWall((440,600)),StoneWall((450,600)),StoneWall((450,610)),StoneWall((440,610)))
+	#doctor, pond, rory, and tardis placement
+	pond = Pond((-700,-750))
+	ponds.add(pond)
+	rory = Rory((-700,-700))
+	rorys.add(rory)
+	tardis = Tardis((100,700))
+	tardises.add(tardis)
+	#RIFT
+	levelmsg = "Well done. This information is proving invaluable to our plan. You will find out more about that later. The coordinates to your next site is plot4_fish. We hope you succeed."
 else:
 	print "error: Specify proper coordinates. Standard is a good keyphrase to begin with."
 	raise RuntimeError
@@ -2829,7 +3140,7 @@ everything7.add(daleks,weapondaleks,doctors,ponds,civilians,speedydaleks,angels,
 units.add(daleks,weapondaleks,doctors,ponds,civilians,speedydaleks,angels,rorys,cybers,silence)
 units2 = pygame.sprite.RenderUpdates()
 units2.add(daleks,weapondaleks,ponds,civilians,speedydaleks,angels,rorys,cybers,silence)
-foes.add(daleks,weapondaleks,speedydaleks,cybers,silence)
+foes.add(daleks,weapondaleks,speedydaleks,cybers,silence,angels)
 
 pygame.display.update(daleks.draw(screen))
 pygame.display.update(doctors.draw(screen))
@@ -2866,6 +3177,13 @@ pygame.display.update(everything.draw(screen))
 
 print regen
 while True:
+	#print caption
+	newcaption = caption[1]+'        '+caption[2]
+	pygame.display.set_caption(newcaption)
+	if random.choice(range(200)) == 10:
+		oldalt = alt
+		alt = caption
+		caption = oldalt
 	doctorx -= (doctorx2 - doctor.rect.x)
 	doctory -= (doctory2 - doctor.rect.y)
 	doctorx2 = doctor.rect.x
@@ -2952,7 +3270,7 @@ while True:
 			stamina += 1
 	time.sleep(SPEED)
 	if regen < 900:
-		regen = regen + 50
+		#regen = regen + 50
 		regen = regen + .4
 	pygame.display.update(daleks.draw(screen))
 	pygame.display.update(doctors.draw(screen))
@@ -3006,6 +3324,8 @@ while True:
 			pygame.display.update(boombolts.draw(screen))
 	if random.choice(range(200)) == 7:
 		print 'saved', saved, 'dead', dead, 'health', health, 'regenoration energy', regen
+		captionset = str('saved ' + str(saved) + ' dead ' + str(dead) + ' health ' + str(health) + ' regenoration energy ' + str(regen))
+		caption[2] = captionset
 	if dead == 12:
 		print "Game Over, excessive deaths of civilians. You shouldn't let twelve civilians get slaughtered like that. You must be almost trying to kill them. Seriously..."
 		raise SystemExit
